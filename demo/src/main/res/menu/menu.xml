@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_mode"
+        app:showAsAction="ifRoom"
+        android:title="Mode">
+
+        <menu>
+
+            <item
+                android:id="@+id/mode_simple"
+                android:title="Simple"/>
+
+            <item
+                android:id="@+id/mode_toggle"
+                android:title="Toggle and undo"/>
+
+            <item
+                android:id="@+id/mode_first_item_dependant"
+                android:title="First item dependent"/>
+
+            <item
+                android:id="@+id/mode_first_item_dependant_toggle"
+                android:title="First item dependent toggle and undo"/>
+
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/menu_select_all"
+        app:showAsAction="never"
+        android:title="Select all"/>
+
+    <item
+        android:id="@+id/menu_clear"
+        app:showAsAction="never"
+        android:title="Clear"/>
+
+    <item
+        android:id="@+id/menu_change_layout_manager"
+        app:showAsAction="never"
+        android:title="Change LayoutManager" />
+
+    <item
+        android:id="@+id/menu_active_slide"
+        app:showAsAction="never"
+        android:title="Active Slide Mode" />
+</menu>
