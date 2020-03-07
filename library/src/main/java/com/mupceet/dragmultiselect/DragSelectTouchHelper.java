@@ -27,6 +27,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.HashSet;
@@ -484,7 +485,7 @@ public class DragSelectTouchHelper {
         mBottomRegionFrom = mBottomRegionTo - mHotspotHeight;
 
         if (mTopRegionTo > mBottomRegionFrom) {
-            mTopRegionTo = mBottomRegionFrom = rvHeight / 2;
+            mTopRegionTo = mBottomRegionFrom = rvHeight >> 1;
         }
 
         Logger.d("Hotspot: [" + mTopRegionFrom + ", " + mTopRegionTo + "], ["
@@ -715,6 +716,14 @@ public class DragSelectTouchHelper {
     private int getItemPosition(RecyclerView rv, float x, float y) {
         final View v = rv.findChildViewUnder(x, y);
         if (v == null) {
+            RecyclerView.LayoutManager layoutManager = rv.getLayoutManager();
+            if (layoutManager instanceof GridLayoutManager) {
+                int lastVisibleItemPosition = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
+                int lastItemPosition = layoutManager.getItemCount() - 1;
+                if (lastItemPosition == lastVisibleItemPosition) {
+                    return lastItemPosition;
+                }
+            }
             return RecyclerView.NO_POSITION;
         }
         return rv.getChildAdapterPosition(v);
