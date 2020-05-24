@@ -16,19 +16,16 @@
 
 选择效果的四种模式分别是：
 
-- Simple: 滑过时选中，往回滑时取消选中
-- ToggleAndUndo: 滑过时反选，往回滑时恢复原状态
-- FirstItemDependent: 反选按下的第一条目，滑过时与第一条目状态一致，往回滑时与第一条目状态相反
-- FirstItemDependentToggleAndUndo: 反选按下的第一条目，滑过时与第一条目状态一致，往回滑时恢复原状态
+- SelectAndKeep：选中第一个 Item，其他 Item 在滑过时被选中，往回滑时保持选中。
+- SelectAndReverse：选中第一个 Item，其他 Item 在滑过时被选中，往回滑时取消选中。
+- SelectAndUndo：选中第一个 Item，其他 Item 在滑过时被选中，往回滑时恢复原状态。
+- ToggleAndKeep：反选第一个 Item，其他 Item 在滑过时与第一个 Item 的状态保持一致，往回滑时保持状态不变。
+- ToggleAndReverse：反选第一个 Item，其他 Item 在滑过时与第一个 Item 的状态保持一致，往回滑时与第一个 Item 的状态相反。
+- ToggleAndUndo：反选第一个 Item，其他 Item 在滑过时与第一个 Item 的状态保持一致，往回滑时恢复该 Item 的原状态。
 
-关于这 4 种模式的效果请看 GIF 图：
+这些模式的效果请看 GIF 图：
 
-| 效果图 | 效果图 |
-| :---: | :---: |
-| Simple | ToggleAndUndo |
-| ![Simple](gifs/Simple.gif)  | ![ToggleAndUndo](gifs/ToggleAndUndo.gif) |
-| FirstItemDependent | FirstItemDependentToggleAndUndo |
-| ![FirstItemDependent](gifs/FirstItemDependent.gif) | ![FirstItemDependentToggleAndUndo](gifs/FirstItemDependentToggleAndUndo.gif) |
+TODO： 待补充效果图
 
 接下来是使用步骤。
 
@@ -201,24 +198,17 @@ mDragSelectTouchHelper.attachToRecyclerView(mRecyclerView);
 mDragSelectTouchListener.activeSlideSelect();
 ```
 
-## TODO
-
-- [x] 支持 Item 泛型 ID
-- [] 支持范围选择和路径选择
-- [] 支持左右滑动类型的 RecyclerView
-- [] 支持 ListView
-
 ## 致谢
 
 此库参考以下三个拖动多选的库，基于实际项目进行改动，修复一些 Bug。而且参考 Android 源码中的 ItemTouchHelper 类对代码进行封装。
 
-- [MFlisar/DragSelectRecyclerView](https://github.com/MFlisar/DragSelectRecyclerView)
-- [weidongjian/AndroidDragSelect-SimulateGooglePhoto](https://github.com/weidongjian/AndroidDragSelect-SimulateGooglePhoto)
 - [afollestad/drag-select-recyclerview](https://github.com/afollestad/drag-select-recyclerview)
+- [weidongjian/AndroidDragSelect-SimulateGooglePhoto](https://github.com/weidongjian/AndroidDragSelect-SimulateGooglePhoto)
+- [MFlisar/DragSelectRecyclerView](https://github.com/MFlisar/DragSelectRecyclerView)
 
 ## License
 
-```txt
+```
 Copyright 2020 Mupceet
 
 Licensed under the Apache License, Version 2.0 (the "License");

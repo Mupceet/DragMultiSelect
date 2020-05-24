@@ -21,7 +21,6 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
     private DragSelectTouchHelper mDragSelectTouchHelper;
-    private AdvanceCallback.Mode mMode = AdvanceCallback.Mode.FirstItemDependent;
     private Toolbar mToolbar;
     private RecyclerView rvData;
     private GridLayoutManager glm;
@@ -66,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         // 1. 创建 Callback
-        mDragSelectTouchHelperCallback = new AdvanceCallback<String>(AdvanceCallback.Mode.FirstItemDependent) {
+        mDragSelectTouchHelperCallback = new AdvanceCallback<String>(AdvanceCallback.Mode.SelectAndReverse) {
             @Override
             public Set<String> currentSelectedId() {
                 return mAdapter.getSelectionSet();
@@ -102,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                 .setAllowDragInSlideState(true);
         // 3. 将 Helper 与 RecyclerView 关联
         mDragSelectTouchHelper.attachToRecyclerView(rvData);
-        mToolbar.setSubtitle("Mode: " + mMode.name());
+        mToolbar.setSubtitle("Mode: " + AdvanceCallback.Mode.SelectAndReverse.name());
     }
 
     private void updateLayoutManager() {
@@ -126,9 +125,9 @@ public class MainActivity extends AppCompatActivity {
     // Selection Listener
     // ---------------------
 
-    private void updateSelectionListener() {
-        mDragSelectTouchHelperCallback.setMode(mMode);
-        mToolbar.setSubtitle("Mode: " + mMode.name());
+    private void updateSelectionListener(AdvanceCallback.Mode mode) {
+        mDragSelectTouchHelperCallback.setMode(mode);
+        mToolbar.setSubtitle("Mode: " + mode.name());
     }
 
     // ---------------------
@@ -152,18 +151,18 @@ public class MainActivity extends AppCompatActivity {
         } else if (item.getItemId() == R.id.menu_active_slide) {
             mDragSelectTouchHelper.activeSlideSelect();
             mAdapter.setSelectMode(true);
-        } else if (item.getItemId() == R.id.mode_simple) {
-            mMode = AdvanceCallback.Mode.Simple;
-            updateSelectionListener();
-        } else if (item.getItemId() == R.id.mode_toggle) {
-            mMode = AdvanceCallback.Mode.ToggleAndUndo;
-            updateSelectionListener();
-        } else if (item.getItemId() == R.id.mode_first_item_dependant) {
-            mMode = AdvanceCallback.Mode.FirstItemDependent;
-            updateSelectionListener();
-        } else if (item.getItemId() == R.id.mode_first_item_dependant_toggle) {
-            mMode = AdvanceCallback.Mode.FirstItemDependentToggleAndUndo;
-            updateSelectionListener();
+        } else if (item.getItemId() == R.id.mode_select_and_keep) {
+            updateSelectionListener(AdvanceCallback.Mode.SelectAndKeep);
+        } else if (item.getItemId() == R.id.mode_select_and_reverse) {
+            updateSelectionListener(AdvanceCallback.Mode.SelectAndReverse);
+        } else if (item.getItemId() == R.id.mode_select_and_undo) {
+            updateSelectionListener(AdvanceCallback.Mode.SelectAndUndo);
+        } else if (item.getItemId() == R.id.mode_toggle_and_keep) {
+            updateSelectionListener(AdvanceCallback.Mode.ToggleAndKeep);
+        } else if (item.getItemId() == R.id.mode_toggle_and_reverse) {
+            updateSelectionListener(AdvanceCallback.Mode.ToggleAndReverse);
+        } else if (item.getItemId() == R.id.mode_toggle_and_undo) {
+            updateSelectionListener(AdvanceCallback.Mode.ToggleAndUndo);
         }
         return true;
     }

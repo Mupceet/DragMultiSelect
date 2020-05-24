@@ -789,6 +789,15 @@ public class DragSelectTouchHelper {
         private boolean mFirstWasSelected;
 
         /**
+         * Creates a SimpleCallback with default {@link Mode#SelectAndReverse}# mode.
+         *
+         * @see Mode
+         */
+        public AdvanceCallback() {
+            setMode(Mode.SelectAndReverse);
+        }
+
+        /**
          * Creates a SimpleCallback with select mode.
          *
          * @param mode the initial select mode
@@ -799,13 +808,7 @@ public class DragSelectTouchHelper {
         }
 
         /**
-         * Sets the select mode, one of:
-         * <ul>
-         * <li>{@link Mode#Simple}
-         * <li>{@link Mode#ToggleAndUndo}
-         * <li>{@link Mode#FirstItemDependent}
-         * <li>{@link Mode#FirstItemDependentToggleAndUndo}
-         * </ul>
+         * Sets the select mode.
          *
          * @param mode The type of select mode.
          * @see Mode
@@ -833,46 +836,51 @@ public class DragSelectTouchHelper {
         public boolean onSelectChange(int position, boolean isSelected) {
             boolean stateChanged;
             switch (mMode) {
-                case Simple: {
+                case SelectAndKeep: {
+                    stateChanged = updateSelectState(position, true);
+                    break;
+                }
+                case SelectAndReverse: {
                     stateChanged = updateSelectState(position, isSelected);
+                    break;
+                }
+                case SelectAndUndo: {
+                    if (isSelected) {
+                        stateChanged = updateSelectState(position, true);
+                    } else {
+                        stateChanged = updateSelectState(position, mOriginalSelection.contains(getItemId(position)));
+                    }
+                    break;
+                }
+                case ToggleAndKeep: {
+                    stateChanged = updateSelectState(position, !mFirstWasSelected);
+                    break;
+                }
+                case ToggleAndReverse: {
+                    if (isSelected) {
+                        stateChanged = updateSelectState(position, !mFirstWasSelected);
+                    } else {
+                        stateChanged = updateSelectState(position, mFirstWasSelected);
+                    }
                     break;
                 }
                 case ToggleAndUndo: {
                     if (isSelected) {
-                        stateChanged = updateSelectState(position,
-                                !mOriginalSelection.contains(getItemId(position)));
+                        stateChanged = updateSelectState(position, !mFirstWasSelected);
                     } else {
-                        stateChanged = updateSelectState(position,
-                                mOriginalSelection.contains(getItemId(position)));
+                        stateChanged = updateSelectState(position, mOriginalSelection.contains(getItemId(position)));
                     }
-                    break;
-                }
-                case FirstItemDependent: {
-                    if (isSelected) {
-                        stateChanged = updateSelectState(position,
-                                !mFirstWasSelected);
-                    } else {
-                        stateChanged = updateSelectState(position,
-                                mFirstWasSelected);
-                    }
-                    break;
-                }
-                case FirstItemDependentToggleAndUndo: {
-                    stateChanged = updateSelectState(position,
-                            isSelected ? !mFirstWasSelected :
-                                    mOriginalSelection.contains(getItemId(position)));
                     break;
                 }
                 default:
-                    // Simple Mode
+                    // SelectAndReverse Mode
                     stateChanged = updateSelectState(position, isSelected);
             }
             return stateChanged;
         }
 
         /**
-         * Get the currently selected items when selecting first item, can be ignored for
-         * {@link Mode#Simple}.
+         * Get the currently selected items when selecting first item.
          *
          * @return the currently selected item's id set.
          */
@@ -900,23 +908,35 @@ public class DragSelectTouchHelper {
          */
         public enum Mode {
             /**
-             * simply selects each item you go by and un-selects on move back
+             * Selects the first item and applies the same state to each item you go by
+             * and keep the state on move back
              */
-            Simple,
+            SelectAndKeep,
             /**
-             * toggles each items original state, reverts to the original state on move back
-             */
-            ToggleAndUndo,
-            /**
-             * toggles the first item and applies the same state to each item you go by
+             * Selects the first item and applies the same state to each item you go by
              * and applies inverted state on move back
              */
-            FirstItemDependent,
+            SelectAndReverse,
             /**
-             * toggles the item and applies the same state to each item you go by
+             * Selects the first item and applies the same state to each item you go by
              * and reverts to the original state on move back
              */
-            FirstItemDependentToggleAndUndo
+            SelectAndUndo,
+            /**
+             * Toggles the first item and applies the same state to each item you go by
+             * and keep the state on move back
+             */
+            ToggleAndKeep,
+            /**
+             * Toggles the first item and applies the same state to each item you go by
+             * and applies inverted state on move back
+             */
+            ToggleAndReverse,
+            /**
+             * Toggles the first item and applies the same state to each item you go by
+             * and reverts to the original state on move back
+             */
+            ToggleAndUndo,
         }
     }
 

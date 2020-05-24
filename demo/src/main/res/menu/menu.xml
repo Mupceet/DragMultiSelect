@@ -9,22 +9,28 @@
         android:title="Mode">
 
         <menu>
+            <item
+                android:id="@+id/mode_select_and_keep"
+                android:title="SelectAndKeep"/>
+            <item
+                android:id="@+id/mode_select_and_reverse"
+                android:title="SelectAndReverse"/>
 
             <item
-                android:id="@+id/mode_simple"
-                android:title="Simple"/>
+                android:id="@+id/mode_select_and_undo"
+                android:title="SelectAndUndo"/>
 
             <item
-                android:id="@+id/mode_toggle"
-                android:title="Toggle and undo"/>
+                android:id="@+id/mode_toggle_and_keep"
+                android:title="ToggleAndKeep"/>
 
             <item
-                android:id="@+id/mode_first_item_dependant"
-                android:title="First item dependent"/>
+                android:id="@+id/mode_toggle_and_reverse"
+                android:title="ToggleAndReverse"/>
 
             <item
-                android:id="@+id/mode_first_item_dependant_toggle"
-                android:title="First item dependent toggle and undo"/>
+                android:id="@+id/mode_toggle_and_undo"
+                android:title="ToggleAndUndo"/>
 
         </menu>
     </item>
