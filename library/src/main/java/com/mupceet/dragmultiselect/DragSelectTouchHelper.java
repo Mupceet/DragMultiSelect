@@ -43,7 +43,7 @@ public class DragSelectTouchHelper {
     private static final EdgeType DEFAULT_EDGE_TYPE = EdgeType.INSIDE_EXTEND;
     private static final float DEFAULT_HOTSPOT_RATIO = 0.2f;
     private static final int DEFAULT_HOTSPOT_OFFSET = 0;
-    private static final int DEFAULT_MAX_SCROLL_VELOCITY = 9;
+    private static final int DEFAULT_MAX_SCROLL_VELOCITY = 10;
     private static final int SELECT_STATE_NORMAL = 0x00;
 
     /*
@@ -84,7 +84,7 @@ public class DragSelectTouchHelper {
     /**
      * The hotspot height.
      */
-    private float mHotspotHeight = -1f;
+    private float mHotspotHeight = 0f;
     /**
      * The hotspot offset.
      */
@@ -127,7 +127,7 @@ public class DragSelectTouchHelper {
                             + left + " " + top + " " + right + " " + bottom);
                     Logger.i("onLayoutChange:old: "
                             + oldLeft + " " + oldTop + " " + oldRight + " " + oldBottom);
-                    init((RecyclerView) v);
+                    init(bottom - top);
                 }
             }
         }
@@ -187,8 +187,9 @@ public class DragSelectTouchHelper {
     private final RecyclerView.OnItemTouchListener mOnItemTouchListener = new RecyclerView.OnItemTouchListener() {
         @Override
         public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
-            Logger.d("intercept: x:" + e.getX() + ",y:" + e.getY() + ", " + e);
-            RecyclerView.Adapter adapter = rv.getAdapter();
+            Logger.d("onInterceptTouchEvent: x:" + e.getX() + ",y:" + e.getY()
+                    + ", " + Logger.actionName(e.getAction()));
+            RecyclerView.Adapter<?> adapter = rv.getAdapter();
             if (adapter == null || adapter.getItemCount() == 0) {
                 return false;
             }
@@ -203,23 +204,26 @@ public class DragSelectTouchHelper {
                     if (mSelectState == SELECT_STATE_SLIDE && isInSlideArea(e)) {
                         mSlideStateStartPosition = getItemPosition(rv, e);
                         if (mSlideStateStartPosition != RecyclerView.NO_POSITION) {
+                            intercept = true;
                             mCallback.onSelectStart(mSlideStateStartPosition);
                             mHaveCalledSelectStart = true;
                         }
                     }
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    if (mSlideStateStartPosition != RecyclerView.NO_POSITION) {
-                        intercept = selectFirstItem(mSlideStateStartPosition);
-                        // selection is triggered
-                        mSlideStateStartPosition = RecyclerView.NO_POSITION;
-                    } else if (mSelectState == SELECT_STATE_DRAG_FROM_NORMAL
+                    if (mSelectState == SELECT_STATE_DRAG_FROM_NORMAL
                             || mSelectState == SELECT_STATE_DRAG_FROM_SLIDE) {
+                        Logger.i("onInterceptTouchEvent: drag mode move");
                         intercept = true;
                     }
                     break;
-                case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
+                    if (mSelectState == SELECT_STATE_DRAG_FROM_NORMAL
+                            || mSelectState == SELECT_STATE_DRAG_FROM_SLIDE) {
+                        intercept = true;
+                    }
+                    // fall through
+                case MotionEvent.ACTION_CANCEL:
                     // finger is lifted before moving
                     if (mSlideStateStartPosition != RecyclerView.NO_POSITION) {
                         selectFinished(mSlideStateStartPosition);
@@ -233,21 +237,28 @@ public class DragSelectTouchHelper {
                 default:
                     // do nothing
             }
-
             // Intercept only when the selection is triggered
+            Logger.d("intercept result: " + intercept);
             return intercept;
         }
 
         @Override
         public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
-            Logger.d("on touch: x:" + e.getX() + ",y:" + e.getY() + ", :" + e);
             if (!isActivated()) {
                 return;
             }
+            Logger.d("onTouchEvent: x:" + e.getX() + ",y:" + e.getY()
+                    + ", " + Logger.actionName(e.getAction()));
             int action = e.getAction();
             int actionMask = action & MotionEvent.ACTION_MASK;
             switch (actionMask) {
                 case MotionEvent.ACTION_MOVE:
+                    if (mSlideStateStartPosition != RecyclerView.NO_POSITION) {
+                        Logger.i("onTouchEvent: after slide mode down");
+                        selectFirstItem(mSlideStateStartPosition);
+                        // selection is triggered
+                        mSlideStateStartPosition = RecyclerView.NO_POSITION;
+                    }
                     processAutoScroll(e);
                     if (!mIsInTopHotspot && !mIsInBottomHotspot) {
                         updateSelectedRange(rv, e);
@@ -458,17 +469,12 @@ public class DragSelectTouchHelper {
         return this;
     }
 
-    private void init(@Nullable RecyclerView rv) {
-        if (rv == null) {
-            return;
-        }
-        int rvHeight = rv.getHeight();
-
+    private void init(int rvHeight) {
         if (mHotspotOffset >= rvHeight * MAX_HOTSPOT_RATIO) {
             mHotspotOffset = rvHeight * MAX_HOTSPOT_RATIO;
         }
         // The height of hotspot area is not set, using (RV height x ratio)
-        if (mHotspotHeight < 0) {
+        if (mHotspotHeight <= 0) {
             if (mHotspotHeightRatio <= 0 || mHotspotHeightRatio >= MAX_HOTSPOT_RATIO) {
                 mHotspotHeightRatio = DEFAULT_HOTSPOT_RATIO;
             }
@@ -494,7 +500,9 @@ public class DragSelectTouchHelper {
 
     private void activeSelectInternal(int position) {
         // We should initialize the hotspot here, because its data may be delayed load
-        init(mRecyclerView);
+        if (mRecyclerView != null) {
+            init(mRecyclerView.getHeight());
+        }
         if (position == RecyclerView.NO_POSITION) {
             Logger.logSelectStateChange(mSelectState, SELECT_STATE_SLIDE);
             mSelectState = SELECT_STATE_SLIDE;
@@ -618,12 +626,6 @@ public class DragSelectTouchHelper {
      */
     private void processAutoScroll(MotionEvent e) {
         float y = e.getY();
-        Logger.d("processAutoScroll: y = " + y
-                + ", mTopRegionFrom = " + mTopRegionFrom
-                + ", mTopRegionTo = " + mTopRegionTo
-                + ", mBottomRegionFrom = " + mBottomRegionFrom
-                + ", mBottomRegionTo = " + mBottomRegionTo
-                + ", mDownY = " + mDownY);
         if (y >= mTopRegionFrom && y <= mTopRegionTo && y < mDownY) {
             mLastX = e.getX();
             mLastY = e.getY();
@@ -941,7 +943,7 @@ public class DragSelectTouchHelper {
     }
 
     private static class Logger {
-        private static boolean DEBUG = BuildConfig.DEBUG;
+        private static boolean DEBUG = false;
 
         private static void d(String msg) {
             if (DEBUG) {
@@ -973,6 +975,44 @@ public class DragSelectTouchHelper {
                     return "DragFromSlide";
                 default:
                     return "Unknown";
+            }
+        }
+
+        private static String actionName(int action) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return "ACTION_DOWN";
+                case MotionEvent.ACTION_UP:
+                    return "ACTION_UP";
+                case MotionEvent.ACTION_CANCEL:
+                    return "ACTION_CANCEL";
+                case MotionEvent.ACTION_OUTSIDE:
+                    return "ACTION_OUTSIDE";
+                case MotionEvent.ACTION_MOVE:
+                    return "ACTION_MOVE";
+                case MotionEvent.ACTION_HOVER_MOVE:
+                    return "ACTION_HOVER_MOVE";
+                case MotionEvent.ACTION_SCROLL:
+                    return "ACTION_SCROLL";
+                case MotionEvent.ACTION_HOVER_ENTER:
+                    return "ACTION_HOVER_ENTER";
+                case MotionEvent.ACTION_HOVER_EXIT:
+                    return "ACTION_HOVER_EXIT";
+                case MotionEvent.ACTION_BUTTON_PRESS:
+                    return "ACTION_BUTTON_PRESS";
+                case MotionEvent.ACTION_BUTTON_RELEASE:
+                    return "ACTION_BUTTON_RELEASE";
+                default:
+                    // continue
+            }
+            int index = (action & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+            switch (action & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    return "ACTION_POINTER_DOWN(" + index + ")";
+                case MotionEvent.ACTION_POINTER_UP:
+                    return "ACTION_POINTER_UP(" + index + ")";
+                default:
+                    return Integer.toString(action);
             }
         }
     }
