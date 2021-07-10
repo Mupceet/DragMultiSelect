@@ -2,14 +2,22 @@ apply plugin: 'com.android.library'
 
 group = "com.mupceet.dragmultiselect"
 android {
-    compileSdkVersion COMPILE_SDK_VERSION as int
+    compileSdkVersion 30
     defaultConfig {
-        minSdkVersion MIN_SDK_VERSION as int
-        targetSdkVersion TARGET_SDK_VERSION as int
-        versionName VERSION_NAME as String
+        minSdkVersion 17
+        targetSdkVersion 30
+        versionCode 1000000
+        versionName '1.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
     }
 }
 
 dependencies {
-    api 'androidx.recyclerview:recyclerview:1.1.0'
+    api 'androidx.recyclerview:recyclerview:1.2.1'
 }
