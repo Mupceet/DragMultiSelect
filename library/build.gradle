@@ -2,12 +2,10 @@ apply plugin: 'com.android.library'
 
 group = "com.mupceet.dragmultiselect"
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 30
-        versionCode 1000000
-        versionName '1.0.0'
+        targetSdkVersion 31
     }
 
     buildTypes {
