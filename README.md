@@ -1,20 +1,24 @@
 # DragMultiSelect
 
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+很多应用的列表都有多选的需求，通常流程为：
 
-一般的，RecyclerView 的选择流程为：
+1. 进入选择模式：用户长按启用选择，或者通过按钮直接进入待选择的状态；
+1. 进行选择：用户滚动列表，点击选择条目；
+1. 退出选择模式：对已选择项进行操作后（如删除、分享）或者按返回键退出选择模式；
 
-- 长按时进入选择模式
-- 进行选择
-- 对选择项进行操作（如删除、分享），然后退出选择模式；或者返回键退出选择模式
+在进行选择时，如果要连续地选择则需要重复地点击，本库旨在提供该场景的最佳解决方案，通过**支持滑动连续选择以及到达列表边缘时自动滚动**的特性极大地提高连续选择的效率。
 
-第一和第三步不用多说，此库是为了让 RecyclerView 的选择操作更加流畅好用，给其增加了滑动选择功能。与常见的长按 **拖动选择** 功能相比，此库给列表型列表增加了一个 **滑动选择** 功能，即可以在指定的滑动区域内滑动时进行选择。
+首先从连续选择的行为说起。
 
-首先从选择的效果说起。
+## 连续选择的行为
 
-## 选择效果
+在进行连续选择时，可以将一次行为拆解成三个环节：
 
-选择效果的四种模式分别是：
+1. 触发选择时，手指按下时的条目（该条目称为第一条目）的状态：**状态设为选中**或者**状态反选**；
+2. 触发选择后，往外滑动时经过的条目的状态：**状态与第一条目的状态一致**；
+3. 触发选择后，往回滑动时经过的条目的状态：**状态不变**、**状态与第一条目的状态相反**、或者**恢复之前状态**；
+
+根据实际的交互要求，我们组合定义出六种行为：
 
 - SelectAndKeep：选中第一个 Item，其他 Item 在滑过时被选中，往回滑时保持选中。
 - SelectAndReverse：选中第一个 Item，其他 Item 在滑过时被选中，往回滑时取消选中。
@@ -27,38 +31,38 @@
 
 TODO： 待补充效果图
 
-接下来是使用步骤。
+如果开发者有明确的触发连续选择的时机例如**长按**或**触控特定控件**，可直接调用**拖动选择**的 API 让用户不抬手时完成连续选择；如果列表项有复选框可以提示用户在此区域内开始选择，则可以设置启用**滑动选择**的 API 得以在尽可能少地修改原项目代码的情况下支持用户连续选择。其中滑动选择功能指的是为列表指定一个特定区域，只要用户触摸在该区域内就可以开始进行连续选择。
 
-## Step 1 of 3: 创建选择时的回调
+下面展示的是具体使用步骤。
 
-要正常地使用此功能，必须创建、设置选择时的回调。
+## Step 1 of 4: 创建选择时的回调
 
-### Callback: Simple 模式
+要正常地使用此功能必须设置选择时的回调接口，通过该回调接口可以执行选择动作的执行。接口分为 Callback 和 AdvanceCallback 两种。
 
-如果只需要实现 Simple 模式的话，创建简单的 `DragSelectTouchHelper.Callback` 即可。
+### Callback
 
-```Java
-private DragSelectTouchHelper.Callback mDragSelectTouchHelperCallback =
-    new DragSelectTouchHelper.Callback() {
+如果只需要实现最常见的 SelectAndReverse 效果的话，创建简单的 `DragMultiSelectHelper.Callback` 即可。
+
+```java
+private DragMultiSelectHelper.Callback mDragMultiSelectHelperCallback =
+    new DragMultiSelectHelper.Callback() {
         @Override
-        public void onSelectChange(int position, boolean newState) {
+        public void onSelectChange(int position, boolean isSelected) {
             // 更新该条目的状态
-            mAdapter.select(position, newState);
+            mAdapter.select(position, isSelected);
         }
     };
 ```
 
-### Callback: Simple 模式增强
+如果需要在选择的开始与结束时进行处理，重写父类的方法即可。
 
-如果需要在 Simple 模式基础上，在选择开始与结束的时候进行回调，重写父类的方法即可。
-
-```Java
-private DragSelectTouchHelper.Callback mDragSelectTouchHelperCallback =
-    new DragSelectTouchHelper.Callback() {
+```java
+private DragMultiSelectHelper.Callback mDragMultiSelectHelperCallback =
+    new DragMultiSelectHelper.Callback() {
         @Override
-        public void onSelectChange(int position, boolean newState) {
+        public void onSelectChange(int position, boolean isSelected) {
             // 更新该条目的状态
-            mAdapter.select(position, newState);
+            mAdapter.select(position, isSelected);
         }
 
         @Override
@@ -77,138 +81,86 @@ private DragSelectTouchHelper.Callback mDragSelectTouchHelperCallback =
 
 ### AdvanceCallback
 
-不失一般的，为了实现多种模式，需要创建 `DragSelectTouchHelper.AdvanceCallback`。
+要使用其它几种策略，需要创建 `DragMultiSelectHelper.AdvanceCallback`。
 
-```Java
-private DragSelectTouchHelper.Callback mDragSelectTouchHelperCallback =
-    new AdvanceCallback(AdvanceCallback.Mode.FirstItemDependent) {
-
+```java
+private DragMultiSelectHelper.Callback mDragSelectTouchHelperCallback =
+    new AdvanceCallback<String>(AdvanceCallback.Behavior.SelectAndUndo) {
         @Override
-        public HashSet<Integer> currentSelectedId() {
-            // 点击开始时获取已选择项
-            return mAdapter.currentSelectedId();
+        public Set<String> currentSelectedId() {
+            return mAdapter.getSelectionSet();
         }
 
         @Override
-        public void updateSelectState(int position, boolean newState) {
+        public String getItemId(int position) {
+            return mAdapter.getItemInfo(position);
+        }
+
+        @Override
+        public boolean updateSelectState(int position, boolean isSelected) {
             // 更新该条目的状态
-            mAdapter.select(position, newState);
+            return mAdapter.select(position, isSelected);
         }
     };
 ```
 
-同样的选择开始与结束的时候进行回调，重写父类的方法即可。
+同样的，如果需要在选择的开始与结束时进行处理，重写父类的方法即可。
 
-## Step 2 of 3: 创建 DragSelectTouchHelper
+## Step 2 of 4: 创建 DragMultiSelectHelper
 
-```Java
-mDragSelectTouchHelper = new DragSelectTouchHelper(mDragSelectTouchHelperCallback);
+通常情况下，如果不启用**滑动选择**的功能，使用默认的配置即可。
+
+```java
+mDragMultiSelectHelper = new DragMultiSelectHelper(mDragMultiSelectHelperCallback);
 ```
 
-以下为 DragSelectTouchHelper 可以配置的选项。
+可以配置的选项如下代码所示，并列出了内部对应的默认值。
 
-```Java
-mDragSelectTouchHelper
-        .setHotspotRatio(0.2f) // 默认滚动区高度为列表的 1/5
-        .setHotspotOffset(0) // 设置滚动区离控件的距离，默认为 0
-        .setMaximumVelocity(9) // 默认滚动最大速度为 9
-        .setEdgeType(DragSelectTouchHelper.EDGE_TYPE_INSIDE_EXTEND) // 设置是否允许在列表之外继续滚动，默认为允许
-        .setAutoEnterSlideMode(false) // 设置自动进入滑动选择模式，默认为不允许
-        .setAllowDragInSlideMode(false) // 设置在滑动选择模式下允许长按拖动选择，默认为不允许
-        .setSlideArea(0, 0); // 滑动选择模式下指定的滑动区域 start~end
+```java
+mDragMultiSelectHelper
+    .setEdgeType(DragMultiSelectHelper.EdgeType.INSIDE_EXTEND) // 设置是否允许在列表之外继续滚动，默认允许
+    .setRelativeHotspotEdges(0.2f) // 默认滚动区高度为列表的 1/5
+    .setMaximumHotspotEdges(Float.MAX_VALUE) // 默认滚动区高度绝对值不作限制
+    .setRelativeVelocity(1.0f) // 默认最大滚动速度为每秒 100% 的列表高度
+    .setMaximumVelocity(dp2px(1575)) // 默认最大滚动速度最多为每秒 1575 dp
+    .setMinimumVelocity(dp2px(315)) // 默认最大滚动速度最少为每秒 315 dp
+    .setAutoEnterSlideState(false) // 设置自动进入滑动选择模式，默认不允许
+    .setAllowDragInSlideState(false) // 设置在滑动选择模式下允许长按拖动选择，默认不允许
+    .setSlideArea(0, 0); // 滑动选择模式下指定的滑动区域 start~end
 ```
 
->**Note:** 注意，只需要配置你所需要的，以下是一些例子
+## Step 3 of 4: RecyclerView 关联 DragMultiSelectHelper
 
-### 列表型
+将上面创建好的 DragMultiSelectHelper 与 RecyclerView 关联：
 
-#### 长按启动选择监听，可拖动选择；抬手关闭选择监听
-
-```Java
-//全部不需要设置
+```java
+mDragMultiSelectHelper.attachToRecyclerView(mRecyclerView);
 ```
 
-#### 长按启动选择监听，可拖动选择；抬手转换监听模式，可滑动选择；需要主动关闭选择监听
+## Step 4 of 4: 启用选择模式
 
-在抬手时，自动转换为滑动选择模式，可配置滑动选择模式下是否还能长按拖动选择。
+需要启用选择时（通常是长按时）调用 `activeDragSelect(position)` 即可进行拖动多选。又或者在合适的时候调用 `activeSlideSelect()`，直接就让列表处于滑动选择模式，列表进入滑动选择模式时，需要主动调用 `inactiveSelect()` 退出该选择模式。
 
-```Java
-// 注意：必须设置 setAutoEnterSlideMode() 与 setSlideArea()，可选择配置 setAllowDragInSlideMode()
-mDragSelectTouchHelper.setAutoEnterSlideMode(true) // 设置自动进入滑动选择模式，默认为不允许
-        .setAllowDragInSlideMode(false) // 设置在滑动选择模式下允许长按拖动选择，默认为不允许
-        .setSlideArea(0, 64); // 滑动选择模式下指定的滑动区域 start~end
-```
-
-在想退出选择功能时，需要调用此方法以关闭选择监听：
-
-```Java
-mDragSelectTouchHelper.inactiveSelect();
-```
-
-#### 直接启动选择监听
-
-若列表直接处于选择模式，可以直接启动选择监听，此时在 **滑动区域内滑动可选择**，还可配置是否允许 **长按时可拖动选择**，默认为不允许，此种行为下，也需要主动在退出时关闭选择监听。
-
-```Java
-// 注意：必须设置 setSlideArea()
-mDragSelectTouchHelper.setSlideArea(0, 64); // 滑动选择模式下指定的滑动区域 start~end
-// .setAllowDragInSlideMode(false) // 设置在滑动选择模式下允许长按拖动选择，默认为不允许
-
-// 直接开启选择监听
-mDragSelectTouchHelper.activeSlideSelect();
-```
-
-在想退出选择功能时，调用此方法以关闭选择监听：
-
-```Java
-mDragSelectTouchHelper.inactiveSelect();
-```
-
-### 网格型
-
-- 长按启动选择监听，可拖动选择；抬手关闭选择监听
-- 点击 CheckBox 时启动选择监听，可拖动选择；抬手关闭选择监听
-
-仅在此说明第二种操作：
-
-滑动选择的监听的方式是针对列表型的，很容易理解，因为列表型在滑动多选模式下，要指定滑动选择的区域，而这个区域通常限制在 CheckBox 所在的位置，是很有限的宽度，所以列表的滚动与滑动选择是不冲突的。而网格型列表要是使用没去选择的功能就无法滚动列表了，其实换一个思路就会发现有一种骚操作……
-
-正常情况下，长按时才启动列表的选择模式，并且在此时开启选择监听，在拖动多选结束后，退出了选择监听（这是设计的初衷）。实际上，你可以任意开启选择监听进行选择，所以……在点击到 CheckBox 时，同样可以启动选择监听！所以支持以下写法：
-
-```Java
-// 需要自行实现此操作
-private void onCheckBoxClick(int position) {
-    mDragSelectTouchHelper.activeDragSelect(position);
-}
-```
-
-本质上来说网格型的滑动选择功能的配置方式是相同的，只要不局限在长按时才开启即可。
-
-## Step 3 of 3: RecyclerView 关联 DragSelectTouchHelper
-
-将上面创建好的 DragSelectTouchHelper 与 RecyclerView 关联：
-
-```Java
-mDragSelectTouchHelper.attachToRecyclerView(mRecyclerView);
-```
-
-长按时调用 `mDragSelectTouchHelper.activeDragSelect(position)` 即可进行拖动多选，又或者在合适的时候，直接就让列表处于选择模式（上文提到了两种方式，具体查看源码）：
-
-```Java
-mDragSelectTouchListener.activeSlideSelect();
+```java
+mDragMultiSelectHelper.activeDragSelect(position);
+// or
+mDragMultiSelectHelper.activeSlideSelect();
+mDragMultiSelectHelper.inactiveSelect();
 ```
 
 ## 致谢
 
-此库参考以下三个拖动多选的库，基于实际项目进行改动，修复一些 Bug。而且参考 Android 源码中的 ItemTouchHelper 类对代码进行封装。
+此库的实现参考了以下三个拖动多选的库：
 
 - [afollestad/drag-select-recyclerview](https://github.com/afollestad/drag-select-recyclerview)
 - [weidongjian/AndroidDragSelect-SimulateGooglePhoto](https://github.com/weidongjian/AndroidDragSelect-SimulateGooglePhoto)
 - [MFlisar/DragSelectRecyclerView](https://github.com/MFlisar/DragSelectRecyclerView)
 
+以及 [AutoScrollHelper.java](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:core/core/src/main/java/androidx/core/widget/AutoScrollHelper.java) 完成核心功能的开发，并且参考 [ItemTouchHelper.java](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:recyclerview/recyclerview/src/main/java/androidx/recyclerview/widget/ItemTouchHelper.java) 对代码进行接口设计与封装。
+
 ## License
 
-```
+```text
 Copyright 2020 Mupceet
 
 Licensed under the Apache License, Version 2.0 (the "License");

@@ -5,13 +5,7 @@
     android:background="?selectableItemBackground"
     android:padding="5dp"
     android:layout_width="match_parent"
-    android:layout_height="50dp">
-
-    <androidx.appcompat.widget.AppCompatRadioButton
-        android:id="@+id/radioButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"/>
+    android:layout_height="100dp">
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/tvText"

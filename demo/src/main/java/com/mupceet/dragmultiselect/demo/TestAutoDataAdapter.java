@@ -1,21 +1,18 @@
 package com.mupceet.dragmultiselect.demo;
 
-import android.content.Context;
 import android.graphics.Color;
-
-import androidx.appcompat.widget.AppCompatRadioButton;
-import androidx.appcompat.widget.AppCompatTextView;
-import androidx.recyclerview.widget.RecyclerView;
-import android.util.Log;
+import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.appcompat.widget.AppCompatTextView;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Created by flisar on 03.03.2017.
@@ -23,15 +20,13 @@ import java.util.function.Consumer;
 
 public class TestAutoDataAdapter extends RecyclerView.Adapter<TestAutoDataAdapter.ViewHolder> {
 
-    private Context mContext;
     private ItemClickListener mClickListener;
     private boolean mIsSelectMode = false;
 
-    private List<Data> mDataList = new ArrayList<>();
-    private Set<String> mSelectedIdSet = new HashSet<>();
+    private final List<Data> mDataList = new ArrayList<>();
+    private final Set<String> mSelectedIdSet = new HashSet<>();
 
-    public TestAutoDataAdapter(Context context, int size) {
-        mContext = context;
+    public TestAutoDataAdapter(int size) {
         for (int i = 0; i < size; i++) {
             mDataList.add(new Data("" + i));
         }
@@ -39,25 +34,20 @@ public class TestAutoDataAdapter extends RecyclerView.Adapter<TestAutoDataAdapte
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(mContext).inflate(R.layout.test_cell, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.test_cell, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+        holder.itemView.setBackground(new ColorDrawable(COLORS[position % 26]));
         Data data = mDataList.get(position);
         holder.mTextView.setText(data.mContent);
-
-        if (mIsSelectMode) {
-            holder.mRadioButton.setVisibility(View.VISIBLE);
-        } else {
-            holder.mRadioButton.setVisibility(View.GONE);
-        }
-        holder.mRadioButton.setChecked(data.isSelected);
         if (data.isSelected) {
-            holder.itemView.setBackgroundColor(Color.GRAY);
+            holder.itemView.setForeground(new ColorDrawable(Color.parseColor("#B3000000")));
         } else {
-            holder.itemView.setBackgroundColor(Color.WHITE);
+            holder.itemView.setForeground(null);
         }
     }
 
@@ -91,7 +81,7 @@ public class TestAutoDataAdapter extends RecyclerView.Adapter<TestAutoDataAdapte
         }
         Data data = mDataList.get(pos);
         data.isSelected = !data.isSelected;
-        notifyItemChanged(pos);
+        notifyItemChanged(pos, data.isSelected);
         if (data.isSelected) {
             mSelectedIdSet.add(getItemInfo(pos));
         } else {
@@ -170,11 +160,9 @@ public class TestAutoDataAdapter extends RecyclerView.Adapter<TestAutoDataAdapte
 
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
         public AppCompatTextView mTextView;
-        public AppCompatRadioButton mRadioButton;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            mRadioButton = itemView.findViewById(R.id.radioButton);
             mTextView = itemView.findViewById(R.id.tvText);
             itemView.setOnClickListener(this);
             itemView.setOnLongClickListener(this);
@@ -195,4 +183,20 @@ public class TestAutoDataAdapter extends RecyclerView.Adapter<TestAutoDataAdapte
             return false;
         }
     }
+
+    private static final int[] COLORS = new int[]{
+            Color.parseColor("#F44336"), Color.parseColor("#E91E63"),
+            Color.parseColor("#9C27B0"), Color.parseColor("#673AB7"),
+            Color.parseColor("#3F51B5"), Color.parseColor("#2196F3"),
+            Color.parseColor("#03A9F4"), Color.parseColor("#00BCD4"),
+            Color.parseColor("#009688"), Color.parseColor("#4CAF50"),
+            Color.parseColor("#8BC34A"), Color.parseColor("#CDDC39"),
+            Color.parseColor("#FFEB3B"), Color.parseColor("#FFC107"),
+            Color.parseColor("#FF9800"), Color.parseColor("#FF5722"),
+            Color.parseColor("#795548"), Color.parseColor("#9E9E9E"),
+            Color.parseColor("#607D8B"), Color.parseColor("#F44336"),
+            Color.parseColor("#E91E63"), Color.parseColor("#9C27B0"),
+            Color.parseColor("#673AB7"), Color.parseColor("#3F51B5"),
+            Color.parseColor("#2196F3"), Color.parseColor("#03A9F4")
+    };
 }

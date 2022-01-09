@@ -13,14 +13,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 
-import com.mupceet.dragmultiselect.DragSelectTouchHelper;
-import com.mupceet.dragmultiselect.DragSelectTouchHelper.AdvanceCallback;
+import com.mupceet.dragmultiselect.DragMultiSelectHelper;
+import com.mupceet.dragmultiselect.DragMultiSelectHelper.AdvanceCallback;
 
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
-    private DragSelectTouchHelper mDragSelectTouchHelper;
+    private DragMultiSelectHelper mDragMultiSelectHelper;
     private Toolbar mToolbar;
     private RecyclerView rvData;
     private GridLayoutManager glm;
@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         // Prepare the RecyclerView (init LayoutManager and set Adapter)
         rvData = findViewById(R.id.rvData);
         updateLayoutManager();
-        mAdapter = new TestAutoDataAdapter(this, 500);
+        mAdapter = new TestAutoDataAdapter(500);
         rvData.setAdapter(mAdapter);
         ((SimpleItemAnimator) rvData.getItemAnimator()).setSupportsChangeAnimations(false);
         mAdapter.setClickListener(new TestAutoDataAdapter.ItemClickListener() {
@@ -60,12 +60,12 @@ public class MainActivity extends AppCompatActivity {
                 // and will correctly transform the touch events so that they can be directly applied to your adapter!!!
                 // 4. 适当的时候进入选择模式
                 mAdapter.setSelectMode(true);
-                mDragSelectTouchHelper.activeDragSelect(position);
+                mDragMultiSelectHelper.activeDragSelect(position);
                 return true;
             }
         });
         // 1. 创建 Callback
-        mDragSelectTouchHelperCallback = new AdvanceCallback<String>(AdvanceCallback.Mode.SelectAndReverse) {
+        mDragSelectTouchHelperCallback = new AdvanceCallback<String>(AdvanceCallback.Behavior.SelectAndKeep) {
             @Override
             public Set<String> currentSelectedId() {
                 return mAdapter.getSelectionSet();
@@ -95,13 +95,14 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "onSelectEnd: " + end);
             }
         };
-        // 2. 创建 SelectTouchHelper
-        mDragSelectTouchHelper = new DragSelectTouchHelper(mDragSelectTouchHelperCallback)
+        // 2. 创建 SelectHelper
+        mDragMultiSelectHelper = new DragMultiSelectHelper(mDragSelectTouchHelperCallback)
                 .setSlideArea(0, 64)
+                .setAutoEnterSlideState(true)
                 .setAllowDragInSlideState(true);
         // 3. 将 Helper 与 RecyclerView 关联
-        mDragSelectTouchHelper.attachToRecyclerView(rvData);
-        mToolbar.setSubtitle("Mode: " + AdvanceCallback.Mode.SelectAndReverse.name());
+        mDragMultiSelectHelper.attachToRecyclerView(rvData);
+        mToolbar.setSubtitle("Mode: " + AdvanceCallback.Behavior.SelectAndReverse.name());
     }
 
     private void updateLayoutManager() {
@@ -125,9 +126,9 @@ public class MainActivity extends AppCompatActivity {
     // Selection Listener
     // ---------------------
 
-    private void updateSelectionListener(AdvanceCallback.Mode mode) {
-        mDragSelectTouchHelperCallback.setMode(mode);
-        mToolbar.setSubtitle("Mode: " + mode.name());
+    private void updateSelectionListener(AdvanceCallback.Behavior behavior) {
+        mDragSelectTouchHelperCallback.setBehavior(behavior);
+        mToolbar.setSubtitle("Mode: " + behavior.name());
     }
 
     // ---------------------
@@ -149,20 +150,20 @@ public class MainActivity extends AppCompatActivity {
         } else if (item.getItemId() == R.id.menu_change_layout_manager) {
             updateLayoutManager();
         } else if (item.getItemId() == R.id.menu_active_slide) {
-            mDragSelectTouchHelper.activeSlideSelect();
+            mDragMultiSelectHelper.activeSlideSelect();
             mAdapter.setSelectMode(true);
         } else if (item.getItemId() == R.id.mode_select_and_keep) {
-            updateSelectionListener(AdvanceCallback.Mode.SelectAndKeep);
+            updateSelectionListener(AdvanceCallback.Behavior.SelectAndKeep);
         } else if (item.getItemId() == R.id.mode_select_and_reverse) {
-            updateSelectionListener(AdvanceCallback.Mode.SelectAndReverse);
+            updateSelectionListener(AdvanceCallback.Behavior.SelectAndReverse);
         } else if (item.getItemId() == R.id.mode_select_and_undo) {
-            updateSelectionListener(AdvanceCallback.Mode.SelectAndUndo);
+            updateSelectionListener(AdvanceCallback.Behavior.SelectAndUndo);
         } else if (item.getItemId() == R.id.mode_toggle_and_keep) {
-            updateSelectionListener(AdvanceCallback.Mode.ToggleAndKeep);
+            updateSelectionListener(AdvanceCallback.Behavior.ToggleAndKeep);
         } else if (item.getItemId() == R.id.mode_toggle_and_reverse) {
-            updateSelectionListener(AdvanceCallback.Mode.ToggleAndReverse);
+            updateSelectionListener(AdvanceCallback.Behavior.ToggleAndReverse);
         } else if (item.getItemId() == R.id.mode_toggle_and_undo) {
-            updateSelectionListener(AdvanceCallback.Mode.ToggleAndUndo);
+            updateSelectionListener(AdvanceCallback.Behavior.ToggleAndUndo);
         }
         return true;
     }
@@ -171,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (mAdapter.isSelectMode()) {
             mAdapter.setSelectMode(false);
-            mDragSelectTouchHelper.inactiveSelect();
+            mDragMultiSelectHelper.inactiveSelect();
         } else {
             super.onBackPressed();
         }
