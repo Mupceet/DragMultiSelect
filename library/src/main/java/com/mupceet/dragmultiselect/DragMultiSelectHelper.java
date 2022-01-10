@@ -79,9 +79,9 @@ import java.util.Set;
  */
 public class DragMultiSelectHelper {
     private static final String TAG = "DMSH";
-    private static final float NO_MAX = Float.MAX_VALUE;
-    private static final float NO_MIN = 0;
-    private static final float RELATIVE_UNSPECIFIED = 0;
+    public static final float NO_MAX = Float.MAX_VALUE;
+    public static final float NO_MIN = 0;
+    public static final float RELATIVE_UNSPECIFIED = 0;
     private static final int HORIZONTAL = RecyclerView.HORIZONTAL;
     private static final int VERTICAL = RecyclerView.VERTICAL;
 
@@ -218,15 +218,15 @@ public class DragMultiSelectHelper {
                         intercept = true;
                     }
                     break;
+                case MotionEvent.ACTION_CANCEL:
+                    // finger is lifted before moving
+                    Logger.i("onInterceptTouchEvent: finger is lifted before moving");
+                    // fall through
                 case MotionEvent.ACTION_UP:
                     if (mSelectState == SELECT_STATE_DRAG_FROM_NORMAL
                             || mSelectState == SELECT_STATE_DRAG_FROM_SLIDE) {
                         intercept = true;
                     }
-                    // fall through
-                case MotionEvent.ACTION_CANCEL:
-                    // finger is lifted before moving
-                    Logger.i("onInterceptTouchEvent: finger is lifted before moving");
                     if (mSlideStateStartPosition != RecyclerView.NO_POSITION) {
                         selectFinished(mSlideStateStartPosition);
                         mSlideStateStartPosition = RecyclerView.NO_POSITION;
@@ -291,7 +291,8 @@ public class DragMultiSelectHelper {
                         velocity = computeTargetVelocity(VERTICAL, e.getY(), rv.getHeight());
                     }
                     if (mScroller.shouldScroll()) {
-                        if (!mScroller.isScrolling() && mScroller.setVelocity(velocity)) {
+                        boolean needStart = mScroller.setVelocity(velocity);
+                        if (!mScroller.isScrolling() && needStart) {
                             startAutoScroll();
                         }
                     } else {
@@ -494,7 +495,7 @@ public class DragMultiSelectHelper {
      *                 {@link #NO_MAX} to leave the relative value unconstrained.
      * @return The scroll helper, which may used to chain setter calls.
      */
-    public DragMultiSelectHelper setMaximumVelocity(int velocity) {
+    public DragMultiSelectHelper setMaximumVelocity(float velocity) {
         mMaximumVelocity[HORIZONTAL] = velocity / 1000f;
         mMaximumVelocity[VERTICAL] = velocity / 1000f;
         return this;
@@ -717,7 +718,7 @@ public class DragMultiSelectHelper {
         } else {
             Logger.e("scrollBy: unknown direction =" + mDirection);
         }
-        Log.i(TAG, "scrollBy: " + mLastTouchPosition[HORIZONTAL] + " " + mLastTouchPosition[VERTICAL]);
+        Logger.d("scrollBy: " + mLastTouchPosition[HORIZONTAL] + " " + mLastTouchPosition[VERTICAL]);
         if (mLastTouchPosition[HORIZONTAL] != Float.MIN_VALUE
                 || mLastTouchPosition[VERTICAL] != Float.MIN_VALUE) {
             updateSelectedRange(mRecyclerView, mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
@@ -728,11 +729,11 @@ public class DragMultiSelectHelper {
         int position = getItemPosition(rv, x, y);
         if (position != RecyclerView.NO_POSITION && mSelectionRecorder.selectUpdate(position)) {
             for (Integer updateToSelectIndex : mSelectionRecorder.getUpdateToSelectIndex()) {
-                Log.i(TAG, "updateSelectedRange: updateToSelectIndex = " + updateToSelectIndex);
+                Logger.i("updateSelectedRange: updateToSelectIndex = " + updateToSelectIndex);
                 mCallback.onSelectChange(updateToSelectIndex, true);
             }
             for (Integer updateToUnselectIndex : mSelectionRecorder.getUpdateToUnselectIndex()) {
-                Log.i(TAG, "updateSelectedRange: updateToUnselectIndex = " + updateToUnselectIndex);
+                Logger.i("updateSelectedRange: updateToUnselectIndex = " + updateToUnselectIndex);
                 mCallback.onSelectChange(updateToUnselectIndex, false);
             }
         }
@@ -991,13 +992,13 @@ public class DragMultiSelectHelper {
 
         public boolean setVelocity(float velocity) {
             boolean shouldStart;
-            Logger.i("AutoScroller setVelocity " + mVelocity + " " + velocity);
+            Logger.d("AutoScroller setVelocity " + mVelocity + " " + velocity);
             if (mVelocity == 0 && velocity != 0) {
                 shouldStart = true;
-            } else if (mVelocity > 0 && velocity > mVelocity) {
+            } else if (mVelocity > 0 && velocity >= mVelocity) {
                 shouldStart = true;
-            } else shouldStart = mVelocity < 0 && velocity < mVelocity;
-            Logger.i("AutoScroller setVelocity shouldStart " + shouldStart);
+            } else shouldStart = mVelocity < 0 && velocity <= mVelocity;
+            Logger.d("AutoScroller setVelocity shouldStart " + shouldStart);
             mVelocity = velocity;
             return shouldStart;
         }
@@ -1026,13 +1027,13 @@ public class DragMultiSelectHelper {
             }
             final long currentTime = SystemClock.uptimeMillis();
             final long elapsedSinceDelta = currentTime - mDeltaTime;
-            Logger.i("AutoScroller computeScrollDelta elapsedSinceDelta=" + elapsedSinceDelta);
+            Logger.d("AutoScroller computeScrollDelta elapsedSinceDelta=" + elapsedSinceDelta);
             mDeltaTime = currentTime;
             mDelta = (int) (elapsedSinceDelta * mVelocity);
         }
 
         public int getDelta() {
-            Logger.i("AutoScroller getDeltaX x=" + mDelta);
+            Logger.d("AutoScroller getDelta=" + mDelta);
             return (int) mDelta;
         }
 

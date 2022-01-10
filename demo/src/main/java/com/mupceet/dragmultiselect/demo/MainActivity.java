@@ -1,6 +1,7 @@
 package com.mupceet.dragmultiselect.demo;
 
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -97,12 +98,19 @@ public class MainActivity extends AppCompatActivity {
         };
         // 2. 创建 SelectHelper
         mDragMultiSelectHelper = new DragMultiSelectHelper(mDragSelectTouchHelperCallback)
-                .setSlideArea(0, 64)
+                .setRelativeVelocity(2f)
+                .setSlideArea(0, dp2px(64))
                 .setAutoEnterSlideState(true)
                 .setAllowDragInSlideState(true);
         // 3. 将 Helper 与 RecyclerView 关联
         mDragMultiSelectHelper.attachToRecyclerView(rvData);
         mToolbar.setSubtitle("Mode: " + AdvanceCallback.Behavior.SelectAndReverse.name());
+    }
+
+    private int dp2px(float dp) {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        return (int) (displayMetrics.density * dp + 0.5);
     }
 
     private void updateLayoutManager() {
