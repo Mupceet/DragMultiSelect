@@ -121,12 +121,24 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView.LayoutManager layoutManager = rvData.getLayoutManager();
         if (layoutManager == null) {
             rvData.setLayoutManager(llm);
+            if (mDragMultiSelectHelper != null) {
+                mDragMultiSelectHelper.inactiveSelect();
+                mDragMultiSelectHelper.setAutoEnterSlideState(true);
+            }
         }
 
         if (layoutManager instanceof GridLayoutManager) {
             rvData.setLayoutManager(llm);
+            if (mDragMultiSelectHelper != null) {
+                mDragMultiSelectHelper.inactiveSelect();
+                mDragMultiSelectHelper.setAutoEnterSlideState(true);
+            }
         } else if (layoutManager instanceof LinearLayoutManager) {
             rvData.setLayoutManager(glm);
+            if (mDragMultiSelectHelper != null) {
+                mDragMultiSelectHelper.inactiveSelect();
+                mDragMultiSelectHelper.setAutoEnterSlideState(false);
+            }
         }
     }
 
