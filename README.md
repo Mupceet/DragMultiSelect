@@ -29,7 +29,11 @@
 
 这些模式的效果请看 GIF 图：
 
-TODO： 待补充效果图
+| SelectAndKeep                                                               | SelectAndReverse                                                               | SelectAndUndo                                                               |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| ![](https://github.com/Mupceet/article-piture/raw/master/SelectAndKeep.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/SelectAndReverse.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/SelectAndUndo.gif) |
+| ToggleAndKeep                                                               | ToggleAndReverse                                                               | ToggleAndUndo                                                               |
+| ![](https://github.com/Mupceet/article-piture/raw/master/ToggleAndKeep.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/ToggleAndReverse.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/ToggleAndUndo.gif) |
 
 如果开发者有明确的触发连续选择的时机例如**长按**或**触控特定控件**，可直接调用**拖动选择**的 API 让用户不抬手时完成连续选择；如果列表项有复选框可以提示用户在此区域内开始选择，则可以设置启用**滑动选择**的 API 得以在尽可能少地修改原项目代码的情况下支持用户连续选择。其中滑动选择功能指的是为列表指定一个特定区域，只要用户触摸在该区域内就可以开始进行连续选择。
 
@@ -37,7 +41,7 @@ TODO： 待补充效果图
 
 ## Step 1 of 4: 创建选择时的回调
 
-要正常地使用此功能必须设置选择时的回调接口，通过该回调接口可以执行选择动作的执行。接口分为 Callback 和 AdvanceCallback 两种。
+要正常地使用此功能必须设置选择时的回调接口，通过该回调接口可以响应执行选择动作。接口分为 Callback 和 AdvanceCallback 两种。
 
 ### Callback
 
@@ -119,12 +123,12 @@ mDragMultiSelectHelper = new DragMultiSelectHelper(mDragMultiSelectHelperCallbac
 ```java
 mDragMultiSelectHelper
     .setEdgeType(DragMultiSelectHelper.EdgeType.INSIDE_EXTEND) // 设置是否允许在列表之外继续滚动，默认允许
-    .setRelativeHotspotEdges(0.2f) // 默认滚动区高度为列表的 1/5
-    .setMaximumHotspotEdges(Float.MAX_VALUE) // 默认滚动区高度绝对值不作限制
-    .setRelativeVelocity(1.0f) // 默认最大滚动速度为每秒 100% 的列表高度
-    .setMaximumVelocity(dp2px(1575)) // 默认最大滚动速度最多为每秒 1575 dp
-    .setMinimumVelocity(dp2px(315)) // 默认最大滚动速度最少为每秒 315 dp
-    .setAutoEnterSlideState(false) // 设置自动进入滑动选择模式，默认不允许
+    .setRelativeHotspotEdges(0.2f) // 滚动区高度为列表的 1/5
+    .setMaximumHotspotEdges(Float.MAX_VALUE) // 滚动区高度绝对值不作限制
+    .setRelativeVelocity(1.0f) // 最大滚动速度为每秒 100% 的列表高度
+    .setMaximumVelocity(dp2px(1575)) // 最大滚动速度最多为每秒 1575 dp
+    .setMinimumVelocity(dp2px(315)) // 最大滚动速度最少为每秒 315 dp
+    .setAutoEnterSlideState(false) // 设置自动进入滑动选择模式，默认不自动进入
     .setAllowDragInSlideState(false) // 设置在滑动选择模式下允许长按拖动选择，默认不允许
     .setSlideArea(0, 0); // 滑动选择模式下指定的滑动区域 start~end
 ```
@@ -150,13 +154,13 @@ mDragMultiSelectHelper.inactiveSelect();
 
 ## 致谢
 
-此库的实现参考了以下三个拖动多选的库：
+此库的实现参考了以下三个拖动多选的库，以及 [AutoScrollHelper.java](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:core/core/src/main/java/androidx/core/widget/AutoScrollHelper.java) 完成核心功能的开发。
 
 - [afollestad/drag-select-recyclerview](https://github.com/afollestad/drag-select-recyclerview)
 - [weidongjian/AndroidDragSelect-SimulateGooglePhoto](https://github.com/weidongjian/AndroidDragSelect-SimulateGooglePhoto)
 - [MFlisar/DragSelectRecyclerView](https://github.com/MFlisar/DragSelectRecyclerView)
 
-以及 [AutoScrollHelper.java](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:core/core/src/main/java/androidx/core/widget/AutoScrollHelper.java) 完成核心功能的开发，并且参考 [ItemTouchHelper.java](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:recyclerview/recyclerview/src/main/java/androidx/recyclerview/widget/ItemTouchHelper.java) 对代码进行接口设计与封装。
+并且参考 [ItemTouchHelper.java](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:recyclerview/recyclerview/src/main/java/androidx/recyclerview/widget/ItemTouchHelper.java) 对代码进行接口设计与封装。
 
 ## License
 
