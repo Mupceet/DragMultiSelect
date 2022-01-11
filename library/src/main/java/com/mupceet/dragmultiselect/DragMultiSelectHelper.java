@@ -78,7 +78,6 @@ import java.util.Set;
  * </ul>
  */
 public class DragMultiSelectHelper {
-    private static final String TAG = "DMSH";
     public static final float NO_MAX = Float.MAX_VALUE;
     public static final float NO_MIN = 0;
     public static final float RELATIVE_UNSPECIFIED = 0;
@@ -982,10 +981,11 @@ public class DragMultiSelectHelper {
         }
 
         public void setVelocity(float velocity) {
+            Logger.d("AutoScroller setVelocity " + mVelocity + " -> " + velocity);
             if (velocity != 0) {
-                Logger.d("AutoScroller setVelocity " + mVelocity + " -> " + velocity);
-                mVelocity = velocity;
-                if (!mIsScrolling) {
+                boolean shouldStart = Math.abs(mVelocity) > 0
+                        && Math.abs(velocity) > Math.abs(mVelocity) ;
+                if (!mIsScrolling && shouldStart) {
                     mScrollStateChangeListener.onScrollStateChange(true);
                     mLastTime = SystemClock.uptimeMillis();
                     mDelta = 0;
@@ -993,11 +993,11 @@ public class DragMultiSelectHelper {
                 }
             } else {
                 mScrollStateChangeListener.onScrollStateChange(false);
-                mVelocity = 0;
                 mLastTime = 0;
                 mDelta = 0;
                 mIsScrolling = false;
             }
+            mVelocity = velocity;
         }
 
         public int getDelta() {
@@ -1117,6 +1117,7 @@ public class DragMultiSelectHelper {
     }
 
     private static class Logger {
+        private static final String TAG = "DMSH";
         private static void d(String msg) {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, msg);
