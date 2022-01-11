@@ -733,14 +733,6 @@ public class DragMultiSelectHelper {
     private int getItemPosition(@NonNull RecyclerView rv, float x, float y) {
         final View v = rv.findChildViewUnder(x, y);
         if (v == null) {
-            RecyclerView.LayoutManager layoutManager = rv.getLayoutManager();
-            if (layoutManager instanceof GridLayoutManager) {
-                int lastVisibleItemPosition = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
-                int lastItemPosition = layoutManager.getItemCount() - 1;
-                if (lastItemPosition == lastVisibleItemPosition) {
-                    return lastItemPosition;
-                }
-            }
             return RecyclerView.NO_POSITION;
         }
         return rv.getChildAdapterPosition(v);
