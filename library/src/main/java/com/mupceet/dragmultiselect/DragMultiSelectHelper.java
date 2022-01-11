@@ -115,7 +115,32 @@ public class DragMultiSelectHelper {
     private static final float DEFAULT_RELATIVE_EDGE = 0.2f;
     private static final EdgeType DEFAULT_EDGE_TYPE = EdgeType.INSIDE_EXTEND;
 
-    private final AutoScroller mScroller = new AutoScroller();
+    private final AutoScroller mScroller = new AutoScroller(new AutoScroller.ScrollStateChangeListener() {
+        @Override
+        public void onScrollStateChange(boolean scroll) {
+            if (scroll) {
+                if (mRecyclerView == null) {
+                    Logger.e("startAutoScroll：Host view has been cleared.");
+                    return;
+                }
+                if (!mScroller.isScrolling()) {
+                    Logger.d("mScrollRunnable post");
+                    mRecyclerView.post(mScrollRunnable);
+                }
+            } else {
+                if (mRecyclerView == null) {
+                    Logger.e("stopAutoScroll：Host view has been cleared.");
+                    return;
+                }
+                if (mScroller.isScrolling()) {
+                    Logger.d("mScrollRunnable remove");
+                    mRecyclerView.removeCallbacks(mScrollRunnable);
+                }
+                updateSelectedRange(mRecyclerView,
+                        mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
+            }
+        }
+    });
     private final SelectionRecorder mSelectionRecorder = new SelectionRecorder();
     /**
      * Edge insets used to activate auto-scrolling.
@@ -157,7 +182,6 @@ public class DragMultiSelectHelper {
                 return;
             }
 
-            scroller.computeScrollDelta();
             scrollBy(scroller.getDelta());
             ViewCompat.postOnAnimation(mRecyclerView, this);
         }
@@ -262,7 +286,6 @@ public class DragMultiSelectHelper {
                         // selection is triggered
                         mSlideStateStartPosition = RecyclerView.NO_POSITION;
                     }
-                    float velocity;
                     if (mDirection == HORIZONTAL) {
                         float downY = e.getY();
                         int paddingBottom = rv.getHeight() - rv.getPaddingBottom();
@@ -275,7 +298,7 @@ public class DragMultiSelectHelper {
                             mLastTouchPosition[VERTICAL] = downY;
                         }
                         // it will record X position.
-                        velocity = computeTargetVelocity(HORIZONTAL, e.getX(), rv.getWidth());
+                        computeTargetVelocity(HORIZONTAL, e.getX(), rv.getWidth());
                     } else {
                         float downX = e.getX();
                         int paddingRight = rv.getWidth() - rv.getPaddingRight();
@@ -288,16 +311,7 @@ public class DragMultiSelectHelper {
                             mLastTouchPosition[HORIZONTAL] = downX;
                         }
                         // it will record Y position.
-                        velocity = computeTargetVelocity(VERTICAL, e.getY(), rv.getHeight());
-                    }
-                    if (mScroller.shouldScroll()) {
-                        boolean needStart = mScroller.setVelocity(velocity);
-                        if (!mScroller.isScrolling() && needStart) {
-                            startAutoScroll();
-                        }
-                    } else {
-                        stopAutoScroll();
-                        updateSelectedRange(rv, e.getX(), e.getY());
+                        computeTargetVelocity(VERTICAL, e.getY(), rv.getHeight());
                     }
                     break;
                 case MotionEvent.ACTION_CANCEL:
@@ -592,7 +606,7 @@ public class DragMultiSelectHelper {
         mHaveCalledSelectStart = false;
         mLastTouchPosition[HORIZONTAL] = Float.MIN_VALUE;
         mLastTouchPosition[VERTICAL] = Float.MIN_VALUE;
-        stopAutoScroll();
+        mScroller.setVelocity(0);
         switch (mSelectState) {
             case SELECT_STATE_DRAG_FROM_NORMAL:
                 if (mShouldAutoChangeState) {
@@ -613,7 +627,7 @@ public class DragMultiSelectHelper {
         }
     }
 
-    private float computeTargetVelocity(int direction, float coordinate, float size) {
+    private void computeTargetVelocity(int direction, float coordinate, float size) {
         final float relativeEdge = mHotspotRelativeEdges[direction];
         final float maximumEdge = mHotspotMaximumEdges[direction];
         final float value = getEdgeValue(relativeEdge, size, maximumEdge, coordinate);
@@ -626,22 +640,21 @@ public class DragMultiSelectHelper {
         }
         if (value == 0) {
             // The edge in this direction is not activated.
-            mScroller.setShouldScroll(false);
-            return 0;
+            mScroller.setVelocity(0);
         } else {
-            mScroller.setShouldScroll(true);
+            final float relativeVelocity = mRelativeVelocity[direction];
+            final float minimumVelocity = mMinimumVelocity[direction];
+            final float maximumVelocity = mMaximumVelocity[direction];
+            final float targetVelocity = relativeVelocity * size;
+            float velocity;
+            if (value > 0) {
+                velocity = constrain(value * targetVelocity, minimumVelocity, maximumVelocity);
+            } else {
+                velocity = -constrain(-value * targetVelocity, minimumVelocity, maximumVelocity);
+            }
+            mScroller.setVelocity(velocity);
         }
 
-        final float relativeVelocity = mRelativeVelocity[direction];
-        final float minimumVelocity = mMinimumVelocity[direction];
-        final float maximumVelocity = mMaximumVelocity[direction];
-        final float targetVelocity = relativeVelocity * size;
-
-        if (value > 0) {
-            return constrain(value * targetVelocity, minimumVelocity, maximumVelocity);
-        } else {
-            return -constrain(-value * targetVelocity, minimumVelocity, maximumVelocity);
-        }
     }
 
     private float getEdgeValue(float relativeValue, float size, float maxValue, float current) {
@@ -682,28 +695,6 @@ public class DragMultiSelectHelper {
         if (value > max) {
             return max;
         } else return Math.max(value, min);
-    }
-
-    private void startAutoScroll() {
-        if (!mScroller.isScrolling()) {
-            mScroller.start();
-            if (mRecyclerView == null) {
-                Logger.i("startAutoScroll：Host view has been cleared.");
-                return;
-            }
-            mRecyclerView.post(mScrollRunnable);
-        }
-    }
-
-    private void stopAutoScroll() {
-        if (mScroller.isScrolling()) {
-            mScroller.stop();
-            if (mRecyclerView == null) {
-                Logger.i("stopAutoScroll：Host view has been cleared.");
-                return;
-            }
-            mRecyclerView.removeCallbacks(mScrollRunnable);
-        }
     }
 
     private void scrollBy(int delta) {
@@ -980,69 +971,59 @@ public class DragMultiSelectHelper {
     }
 
     private static class AutoScroller {
-        private float mVelocity = Float.MIN_VALUE;
-        private long mDeltaTime = -1;
-        private int mDelta = -1;
+        private float mVelocity = 0;
+        private long mLastTime = 0;
+        private int mDelta = 0;
 
         /**
          * Indicates automatically scroll.
          */
         private boolean mIsScrolling;
-        private boolean mShouldScroll = false;
 
-        public boolean setVelocity(float velocity) {
-            boolean shouldStart;
-            Logger.d("AutoScroller setVelocity " + mVelocity + " " + velocity);
-            if (mVelocity == 0 && velocity != 0) {
-                shouldStart = true;
-            } else if (mVelocity > 0 && velocity >= mVelocity) {
-                shouldStart = true;
-            } else shouldStart = mVelocity < 0 && velocity <= mVelocity;
-            Logger.d("AutoScroller setVelocity shouldStart " + shouldStart);
-            mVelocity = velocity;
-            return shouldStart;
+        interface ScrollStateChangeListener {
+            void onScrollStateChange(boolean scroll);
+        }
+        private final ScrollStateChangeListener mScrollStateChangeListener;
+
+        public AutoScroller(ScrollStateChangeListener scrollStateChangeListener) {
+            mScrollStateChangeListener = scrollStateChangeListener;
         }
 
-        public void start() {
-            mDeltaTime = SystemClock.uptimeMillis();
-            mDelta = 0;
-            mIsScrolling = true;
+        public void setVelocity(float velocity) {
+            if (velocity != 0) {
+                Logger.d("AutoScroller setVelocity " + mVelocity + " -> " + velocity);
+                mVelocity = velocity;
+                if (!mIsScrolling) {
+                    mScrollStateChangeListener.onScrollStateChange(true);
+                    mLastTime = SystemClock.uptimeMillis();
+                    mDelta = 0;
+                    mIsScrolling = true;
+                }
+            } else {
+                mScrollStateChangeListener.onScrollStateChange(false);
+                mVelocity = 0;
+                mLastTime = 0;
+                mDelta = 0;
+                mIsScrolling = false;
+            }
         }
 
-        public void stop() {
-            mVelocity = Float.MIN_VALUE;
-            mDeltaTime = -1;
-            mDelta = -1;
-            mIsScrolling = false;
+        public int getDelta() {
+            if (mLastTime == -1) {
+                Logger.e("Cannot compute scroll delta before calling start()");
+                return 0;
+            }
+            final long currentTime = SystemClock.uptimeMillis();
+            final long elapsedSinceDelta = currentTime - mLastTime;
+            mLastTime = currentTime;
+            mDelta = (int) (elapsedSinceDelta * mVelocity);
+            Logger.d("AutoScroller spend time:" + elapsedSinceDelta);
+            Logger.d("AutoScroller delta:" + mDelta);
+            return mDelta;
         }
 
         public boolean isScrolling() {
             return mIsScrolling;
-        }
-
-        public void computeScrollDelta() {
-            if (mDeltaTime == -1) {
-                Logger.e("Cannot compute scroll delta before calling start()");
-                return;
-            }
-            final long currentTime = SystemClock.uptimeMillis();
-            final long elapsedSinceDelta = currentTime - mDeltaTime;
-            Logger.d("AutoScroller computeScrollDelta elapsedSinceDelta=" + elapsedSinceDelta);
-            mDeltaTime = currentTime;
-            mDelta = (int) (elapsedSinceDelta * mVelocity);
-        }
-
-        public int getDelta() {
-            Logger.d("AutoScroller getDelta=" + mDelta);
-            return (int) mDelta;
-        }
-
-        public void setShouldScroll(boolean shouldScroll) {
-            mShouldScroll = shouldScroll;
-        }
-
-        public boolean shouldScroll() {
-            return mShouldScroll;
         }
     }
 
