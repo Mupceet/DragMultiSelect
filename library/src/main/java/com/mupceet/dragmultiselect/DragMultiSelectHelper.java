@@ -718,12 +718,10 @@ public class DragMultiSelectHelper {
     private void updateSelectedRange(@NonNull RecyclerView rv, float x, float y) {
         int position = getItemPosition(rv, x, y);
         if (position != RecyclerView.NO_POSITION && mSelectionRecorder.selectUpdate(position)) {
-            for (Integer updateToSelectIndex : mSelectionRecorder.getUpdateToSelectIndex()) {
-                Logger.i("updateSelectedRange: updateToSelectIndex = " + updateToSelectIndex);
+            for (int updateToSelectIndex : mSelectionRecorder.getUpdateToSelectIndex()) {
                 mCallback.onSelectChange(updateToSelectIndex, true);
             }
-            for (Integer updateToUnselectIndex : mSelectionRecorder.getUpdateToUnselectIndex()) {
-                Logger.i("updateSelectedRange: updateToUnselectIndex = " + updateToUnselectIndex);
+            for (int updateToUnselectIndex : mSelectionRecorder.getUpdateToUnselectIndex()) {
                 mCallback.onSelectChange(updateToUnselectIndex, false);
             }
         }
@@ -1092,8 +1090,10 @@ public class DragMultiSelectHelper {
             if (mStart == RecyclerView.NO_POSITION || mEnd == RecyclerView.NO_POSITION) {
                 return new int[0];
             }
-            Logger.d("getUpdateToSelectIndex: " + mUpdateToSelectSet.toString());
-
+            if (mUpdateToSelectSet.size() == 0) {
+                return new int[0];
+            }
+            Logger.i("getUpdateToSelectIndex: " + mUpdateToSelectSet.toString());
             int[] result = new int[mUpdateToSelectSet.size()];
             for (int i = 0; i < result.length; i++) {
                 result[i] = mUpdateToSelectSet.get(i);
@@ -1106,7 +1106,10 @@ public class DragMultiSelectHelper {
             if (mStart == RecyclerView.NO_POSITION || mEnd == RecyclerView.NO_POSITION) {
                 return new int[0];
             }
-            Logger.d("getUpdateToUnselectIndex: " + mUpdateToUnselectSet.toString());
+            if (mUpdateToUnselectSet.size() == 0) {
+                return new int[0];
+            }
+            Logger.i("getUpdateToUnselectIndex: " + mUpdateToUnselectSet.toString());
             int[] result = new int[mUpdateToUnselectSet.size()];
             for (int i = 0; i < result.length; i++) {
                 result[i] = mUpdateToUnselectSet.get(i);
