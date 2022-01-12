@@ -144,23 +144,23 @@ public class DragMultiSelectHelper {
     /**
      * Edge insets used to activate auto-scrolling.
      */
-    private final float[] mHotspotRelativeEdges = new float[]{RELATIVE_UNSPECIFIED, RELATIVE_UNSPECIFIED};
+    private float mHotspotRelativeEdges = RELATIVE_UNSPECIFIED;
     /**
      * Clamping values for edge insets used to activate auto-scrolling.
      */
-    private final float[] mHotspotMaximumEdges = new float[]{NO_MAX, NO_MAX};
+    private float mHotspotMaximumEdges = NO_MAX;
     /**
      * Relative scrolling velocity at maximum edge distance.
      */
-    private final float[] mRelativeVelocity = new float[]{RELATIVE_UNSPECIFIED, RELATIVE_UNSPECIFIED};
+    private float mRelativeVelocity = RELATIVE_UNSPECIFIED;
     /**
      * Clamping values used for scrolling velocity.
      */
-    private final float[] mMinimumVelocity = new float[]{NO_MIN, NO_MIN};
+    private float mMinimumVelocity = NO_MIN;
     /**
      * Clamping values used for scrolling velocity.
      */
-    private final float[] mMaximumVelocity = new float[]{NO_MAX, NO_MAX};
+    private float mMaximumVelocity = NO_MAX;
     /**
      * Developer callback which controls the behavior of DragSelectTouchHelper.
      */
@@ -438,8 +438,7 @@ public class DragMultiSelectHelper {
      * @return The scroll helper, which may used to chain setter calls.
      */
     public DragMultiSelectHelper setRelativeHotspotEdges(float ratio) {
-        mHotspotRelativeEdges[HORIZONTAL] = ratio;
-        mHotspotRelativeEdges[VERTICAL] = ratio;
+        mHotspotRelativeEdges = ratio;
         return this;
     }
 
@@ -457,8 +456,7 @@ public class DragMultiSelectHelper {
      * @return The scroll helper, which may used to chain setter calls.
      */
     public DragMultiSelectHelper setMaximumHotspotEdges(float maximumHotspotEdges) {
-        mHotspotMaximumEdges[HORIZONTAL] = maximumHotspotEdges;
-        mHotspotMaximumEdges[VERTICAL] = maximumHotspotEdges;
+        mHotspotMaximumEdges = maximumHotspotEdges;
         return this;
     }
 
@@ -475,8 +473,7 @@ public class DragMultiSelectHelper {
      * @return The scroll helper, which may used to chain setter calls.
      */
     public DragMultiSelectHelper setRelativeVelocity(float velocity) {
-        mRelativeVelocity[HORIZONTAL] = velocity / 1000f;
-        mRelativeVelocity[VERTICAL] = velocity / 1000f;
+        mRelativeVelocity = velocity / 1000f;
         return this;
     }
 
@@ -491,8 +488,7 @@ public class DragMultiSelectHelper {
      * @return The scroll helper, which may used to chain setter calls.
      */
     public DragMultiSelectHelper setMinimumVelocity(float velocity) {
-        mMinimumVelocity[HORIZONTAL] = velocity / 1000f;
-        mMinimumVelocity[VERTICAL] = velocity / 1000f;
+        mMinimumVelocity = velocity / 1000f;
         return this;
     }
 
@@ -509,8 +505,7 @@ public class DragMultiSelectHelper {
      * @return The scroll helper, which may used to chain setter calls.
      */
     public DragMultiSelectHelper setMaximumVelocity(float velocity) {
-        mMaximumVelocity[HORIZONTAL] = velocity / 1000f;
-        mMaximumVelocity[VERTICAL] = velocity / 1000f;
+        mMaximumVelocity = velocity / 1000f;
         return this;
     }
 
@@ -627,9 +622,7 @@ public class DragMultiSelectHelper {
     }
 
     private void computeTargetVelocity(int direction, float coordinate, float size) {
-        final float relativeEdge = mHotspotRelativeEdges[direction];
-        final float maximumEdge = mHotspotMaximumEdges[direction];
-        final float value = getEdgeValue(relativeEdge, size, maximumEdge, coordinate);
+        final float value = getEdgeValue(mHotspotRelativeEdges, size, mHotspotMaximumEdges, coordinate);
         if (Float.compare(value, -1f) == 0) {
             mLastTouchPosition[direction] = 0;
         } else if (Float.compare(value, 1f) == 0) {
@@ -641,15 +634,12 @@ public class DragMultiSelectHelper {
             // The edge in this direction is not activated.
             mScroller.setVelocity(0);
         } else {
-            final float relativeVelocity = mRelativeVelocity[direction];
-            final float minimumVelocity = mMinimumVelocity[direction];
-            final float maximumVelocity = mMaximumVelocity[direction];
-            final float targetVelocity = relativeVelocity * size;
+            final float targetVelocity = mRelativeVelocity * size;
             float velocity;
             if (value > 0) {
-                velocity = constrain(value * targetVelocity, minimumVelocity, maximumVelocity);
+                velocity = constrain(value * targetVelocity, mMinimumVelocity, mMaximumVelocity);
             } else {
-                velocity = -constrain(-value * targetVelocity, minimumVelocity, maximumVelocity);
+                velocity = -constrain(-value * targetVelocity, mMinimumVelocity, mMaximumVelocity);
             }
             mScroller.setVelocity(velocity);
         }
