@@ -85,13 +85,13 @@ public class DragMultiSelectHelper {
     private static final int VERTICAL = RecyclerView.VERTICAL;
 
     /*
-     *                        !autoChangeMode           +-------------------+     inactiveSelect()
+     *                       !autoChangeState           +-------------------+  inactiveSlideSelect()
      *           +------------------------------------> |                   | <--------------------+
      *           |                                      |      Normal       |                      |
      *           |        activeDragSelect(position)    |                   | activeSlideSelect()  |
      *           |      +------------------------------ |                   | ----------+          |
      *           |      v                               +-------------------+           v          |
-     *  +-------------------+                              autoChangeMode     +-----------------------+
+     *  +-------------------+               autoChangeState                   +-----------------------+
      *  | Drag From Normal  | ----------------------------------------------> |                       |
      *  +-------------------+                                                 |                       |
      *  |                   |                                                 |                       |

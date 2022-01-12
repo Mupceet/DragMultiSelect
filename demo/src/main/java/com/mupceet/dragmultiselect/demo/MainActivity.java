@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         // 1. 创建 Callback
-        mDragSelectTouchHelperCallback = new AdvanceCallback<String>(AdvanceCallback.Behavior.SelectAndKeep) {
+        mDragSelectTouchHelperCallback = new AdvanceCallback<String>() {
             @Override
             public Set<String> currentSelectedId() {
                 return mAdapter.getSelectionSet();
