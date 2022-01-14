@@ -28,7 +28,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
@@ -135,8 +134,11 @@ public class DragMultiSelectHelper {
                     Logger.d("mScrollRunnable remove");
                     mRecyclerView.removeCallbacks(mScrollRunnable);
                 }
-                updateSelectedRange(mRecyclerView,
-                        mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
+                if (mLastTouchPosition[HORIZONTAL] != Float.MIN_VALUE
+                        || mLastTouchPosition[VERTICAL] != Float.MIN_VALUE) {
+                    updateSelectedRange(mRecyclerView,
+                            mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
+                }
             }
         }
     });
@@ -315,6 +317,12 @@ public class DragMultiSelectHelper {
                     break;
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
+                    if (mSlideStateStartPosition != RecyclerView.NO_POSITION) {
+                        selectFirstItem(mSlideStateStartPosition);
+                        // selection is triggered
+                        mSlideStateStartPosition = RecyclerView.NO_POSITION;
+                        Logger.i("onTouchEvent: up/cancel after slide mode down");
+                    }
                     selectFinished(mSelectionRecorder.endPosition());
                     break;
                 default:
@@ -1046,6 +1054,7 @@ public class DragMultiSelectHelper {
             if (mEnd == position) {
                 return false;
             }
+            Logger.d("selectUpdate=" + position);
             mEnd = position;
             int newStart, newEnd;
             newStart = Math.min(mStart, mEnd);
