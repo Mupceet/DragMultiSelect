@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * DragMultiSelectHelper is a utility class that based on {@link RecyclerView.OnItemTouchListener}
+ * DragMultiSelectHelper is a utility class that based on {@link OnItemTouchListener}
  * for adding selecting with automatic edge-triggered scrolling to RecyclerView.
  * <p>
  * <h1>Hotspot</h1> Automatic scrolling starts when the user moving to
@@ -115,30 +115,28 @@ public class DragMultiSelectHelper {
 
     private final AutoScroller mScroller = new AutoScroller(new AutoScroller.ScrollStateChangeListener() {
         @Override
-        public void onScrollStateChange(boolean scroll) {
-            if (scroll) {
-                if (mRecyclerView == null) {
-                    Logger.e("startAutoScroll：Host view has been cleared.");
-                    return;
-                }
-                if (!mScroller.isScrolling()) {
+        public void onScrollStateChange(int scrollState) {
+            switch (scrollState) {
+                case SCROLL_STARTING:
+                    if (mRecyclerView == null) {
+                        Logger.e("startAutoScroll：Host view has been cleared.");
+                        return;
+                    }
                     Logger.d("mScrollRunnable post");
                     mRecyclerView.post(mScrollRunnable);
-                }
-            } else {
-                if (mRecyclerView == null) {
-                    Logger.e("stopAutoScroll：Host view has been cleared.");
-                    return;
-                }
-                if (mScroller.isScrolling()) {
+                    break;
+                case SCROLL_STOPPING:
+                    if (mRecyclerView == null) {
+                        Logger.e("stopAutoScroll：Host view has been cleared.");
+                        return;
+                    }
                     Logger.d("mScrollRunnable remove");
                     mRecyclerView.removeCallbacks(mScrollRunnable);
-                }
-                if (mLastTouchPosition[HORIZONTAL] != Float.MIN_VALUE
-                        || mLastTouchPosition[VERTICAL] != Float.MIN_VALUE) {
-                    updateSelectedRange(mRecyclerView,
-                            mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
-                }
+                    break;
+                case SCROLL_IDLE:
+                default:
+                    updateSelectedRange(mRecyclerView, mLastTouchPosition[HORIZONTAL],
+                            mLastTouchPosition[VERTICAL]);
             }
         }
     });
@@ -606,9 +604,9 @@ public class DragMultiSelectHelper {
         mSelectionRecorder.clearSelect();
 
         mHaveCalledSelectStart = false;
+        mScroller.setVelocity(0);
         mLastTouchPosition[HORIZONTAL] = Float.MIN_VALUE;
         mLastTouchPosition[VERTICAL] = Float.MIN_VALUE;
-        mScroller.setVelocity(0);
         switch (mSelectState) {
             case SELECT_STATE_DRAG_FROM_NORMAL:
                 if (mShouldAutoChangeState) {
@@ -706,14 +704,15 @@ public class DragMultiSelectHelper {
         } else {
             Logger.e("scrollBy: unknown direction =" + mDirection);
         }
-        Logger.d("scrollBy: " + mLastTouchPosition[HORIZONTAL] + " " + mLastTouchPosition[VERTICAL]);
-        if (mLastTouchPosition[HORIZONTAL] != Float.MIN_VALUE
-                || mLastTouchPosition[VERTICAL] != Float.MIN_VALUE) {
-            updateSelectedRange(mRecyclerView, mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
-        }
+        updateSelectedRange(mRecyclerView, mLastTouchPosition[HORIZONTAL], mLastTouchPosition[VERTICAL]);
     }
 
     private void updateSelectedRange(@NonNull RecyclerView rv, float x, float y) {
+        if (mLastTouchPosition[HORIZONTAL] == Float.MIN_VALUE
+                && mLastTouchPosition[VERTICAL] == Float.MIN_VALUE) {
+            Logger.d("updateSelectedRange with initial position value");
+            return;
+        }
         int position = getItemPosition(rv, x, y);
         if (position != RecyclerView.NO_POSITION && mSelectionRecorder.selectUpdate(position)) {
             for (int updateToSelectIndex : mSelectionRecorder.getUpdateToSelectIndex()) {
@@ -968,7 +967,10 @@ public class DragMultiSelectHelper {
         private boolean mIsScrolling;
 
         interface ScrollStateChangeListener {
-            void onScrollStateChange(boolean scroll);
+            int SCROLL_IDLE = 1;
+            int SCROLL_STARTING = 0;
+            int SCROLL_STOPPING = 2;
+            void onScrollStateChange(int scrollState);
         }
         private final ScrollStateChangeListener mScrollStateChangeListener;
 
@@ -982,16 +984,22 @@ public class DragMultiSelectHelper {
                 boolean shouldStart = Math.abs(mVelocity) > 0
                         && Math.abs(velocity) > Math.abs(mVelocity) ;
                 if (!mIsScrolling && shouldStart) {
-                    mScrollStateChangeListener.onScrollStateChange(true);
+                    mScrollStateChangeListener.onScrollStateChange(ScrollStateChangeListener.SCROLL_STARTING);
                     mLastTime = SystemClock.uptimeMillis();
                     mDelta = 0;
                     mIsScrolling = true;
+                } else {
+                    mScrollStateChangeListener.onScrollStateChange(ScrollStateChangeListener.SCROLL_IDLE);
                 }
             } else {
-                mScrollStateChangeListener.onScrollStateChange(false);
-                mLastTime = 0;
-                mDelta = 0;
-                mIsScrolling = false;
+                if (mIsScrolling) {
+                    mScrollStateChangeListener.onScrollStateChange(ScrollStateChangeListener.SCROLL_STOPPING);
+                    mIsScrolling = false;
+                    mLastTime = 0;
+                    mDelta = 0;
+                } else {
+                    mScrollStateChangeListener.onScrollStateChange(ScrollStateChangeListener.SCROLL_IDLE);
+                }
             }
             mVelocity = velocity;
         }
@@ -1051,10 +1059,15 @@ public class DragMultiSelectHelper {
         }
 
         private boolean selectUpdate(int position) {
+            if (mStart == RecyclerView.NO_POSITION && mEnd == RecyclerView.NO_POSITION) {
+                return false;
+            }
+
             if (mEnd == position) {
                 return false;
             }
-            Logger.d("selectUpdate=" + position);
+            Logger.d("selectUpdate=" + position + ", mStart=" + mStart + ", mEnd=" + mEnd
+                    + ", mLastRealStart=" + mLastRealStart + ", mLastRealEnd=" + mLastRealEnd);
             mEnd = position;
             int newStart, newEnd;
             newStart = Math.min(mStart, mEnd);
