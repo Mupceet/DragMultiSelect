@@ -336,6 +336,14 @@ public class DragMultiSelectHelper {
         }
     };
 
+    /**
+     * Creates a new helper for drag select.
+     * <p>
+     * The resulting helper may be configured by chaining setter calls.
+     * <p>
+     *
+     * @param callback The listener callback for the selected entry.
+     */
     public DragMultiSelectHelper(@NonNull Callback callback) {
         mCallback = callback;
         DisplayMetrics mDisplayMetrics = Resources.getSystem().getDisplayMetrics();
@@ -351,6 +359,15 @@ public class DragMultiSelectHelper {
         setAutoEnterSlideState(false);
         setAllowDragInSlideState(false);
         setSlideArea(0, 0);
+    }
+
+    /**
+     * Enable or disable debug logs.
+     *
+     * @param debug Indicates debug state.
+     */
+    public static void withDebug(boolean debug) {
+        Logger.sDebug = debug;
     }
 
     /**
@@ -583,7 +600,7 @@ public class DragMultiSelectHelper {
                     mSelectState = SELECT_STATE_DRAG_FROM_NORMAL;
                 }
             } else {
-                Logger.e("activeSelect in unexpected state: " + mSelectState);
+                Logger.e("activeSelect in unexpected state: " + Logger.stateName(mSelectState));
             }
         }
     }
@@ -694,7 +711,7 @@ public class DragMultiSelectHelper {
 
     private void scrollBy(int delta) {
         if (mRecyclerView == null) {
-            Logger.i("scrollBy：Host view has been cleared.");
+            Logger.e("scrollBy：Host view has been cleared.");
             return;
         }
         if (mDirection == VERTICAL) {
@@ -1005,8 +1022,8 @@ public class DragMultiSelectHelper {
         }
 
         public int getDelta() {
-            if (mLastTime == -1) {
-                Logger.e("Cannot compute scroll delta before calling start()");
+            if (mLastTime == 0) {
+                Logger.e("Cannot compute scroll delta before scrolling start");
                 return 0;
             }
             final long currentTime = SystemClock.uptimeMillis();
@@ -1105,7 +1122,7 @@ public class DragMultiSelectHelper {
             if (mUpdateToSelectSet.size() == 0) {
                 return new int[0];
             }
-            Logger.i("getUpdateToSelectIndex: " + mUpdateToSelectSet.toString());
+            Logger.d("getUpdateToSelectIndex: " + mUpdateToSelectSet.toString());
             int[] result = new int[mUpdateToSelectSet.size()];
             for (int i = 0; i < result.length; i++) {
                 result[i] = mUpdateToSelectSet.get(i);
@@ -1121,7 +1138,7 @@ public class DragMultiSelectHelper {
             if (mUpdateToUnselectSet.size() == 0) {
                 return new int[0];
             }
-            Logger.i("getUpdateToUnselectIndex: " + mUpdateToUnselectSet.toString());
+            Logger.d("getUpdateToUnselectIndex: " + mUpdateToUnselectSet.toString());
             int[] result = new int[mUpdateToUnselectSet.size()];
             for (int i = 0; i < result.length; i++) {
                 result[i] = mUpdateToUnselectSet.get(i);
@@ -1133,8 +1150,9 @@ public class DragMultiSelectHelper {
 
     private static class Logger {
         private static final String TAG = "DMSH";
+        private static boolean sDebug = false;
         private static void d(String msg) {
-            if (BuildConfig.DEBUG) {
+            if (sDebug) {
                 Log.d(TAG, msg);
             }
         }
