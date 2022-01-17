@@ -1,5 +1,7 @@
 # DragMultiSelect
 
+![Maven Central](https://img.shields.io/maven-central/v/com.mupceet.dragmultiselect/dragmultiselect)
+
 很多应用的列表都有多选的需求，通常流程为：
 
 1. 进入选择模式：用户长按启用选择，或者通过按钮直接进入待选择的状态；
@@ -37,13 +39,19 @@
 
 如果开发者有明确的触发连续选择的时机例如**长按**或**触控特定控件**，可直接调用**拖动选择**的 API 让用户不抬手时完成连续选择；如果列表项有复选框可以提示用户在此区域内开始选择，则可以设置启用**滑动选择**的 API 得以在尽可能少地修改原项目代码的情况下支持用户连续选择。其中滑动选择功能指的是为列表指定一个特定区域，只要用户触摸在该区域内就可以开始进行连续选择。
 
-下面展示的是具体使用步骤。
+## 开始使用
 
-## Step 1 of 4: 创建选择时的回调
+![Maven Central](https://img.shields.io/maven-central/v/com.mupceet.dragmultiselect/dragmultiselect)
+
+```kotlin
+implementation("com.mupceet.dragmultiselect:dragmultiselect:(insert latest version)")
+```
+
+### Step 1 of 4: 创建选择时的回调
 
 要正常地使用此功能必须设置选择时的回调接口，通过该回调接口可以响应执行选择动作。接口分为 Callback 和 AdvanceCallback 两种。
 
-### Callback
+#### Callback
 
 如果只需要实现最常见的 SelectAndReverse 效果的话，创建简单的 `DragMultiSelectHelper.Callback` 即可。
 
@@ -83,7 +91,7 @@ private DragMultiSelectHelper.Callback mDragMultiSelectHelperCallback =
     };
 ```
 
-### AdvanceCallback
+#### AdvanceCallback
 
 要使用其它几种策略，需要创建 `DragMultiSelectHelper.AdvanceCallback`。
 
@@ -110,7 +118,7 @@ private DragMultiSelectHelper.Callback mDragSelectTouchHelperCallback =
 
 同样的，如果需要在选择的开始与结束时进行处理，重写父类的方法即可。
 
-## Step 2 of 4: 创建 DragMultiSelectHelper
+### Step 2 of 4: 创建 DragMultiSelectHelper
 
 通常情况下，如果不启用**滑动选择**的功能，使用默认的配置即可。
 
@@ -133,7 +141,7 @@ mDragMultiSelectHelper
     .setSlideArea(0, 0); // 滑动选择模式下指定的滑动区域 start~end
 ```
 
-## Step 3 of 4: RecyclerView 关联 DragMultiSelectHelper
+### Step 3 of 4: RecyclerView 关联 DragMultiSelectHelper
 
 将上面创建好的 DragMultiSelectHelper 与 RecyclerView 关联：
 
@@ -141,7 +149,7 @@ mDragMultiSelectHelper
 mDragMultiSelectHelper.attachToRecyclerView(mRecyclerView);
 ```
 
-## Step 4 of 4: 启用选择模式
+### Step 4 of 4: 启用选择模式
 
 需要启用选择时（通常是长按时）调用 `activeDragSelect(position)` 即可进行拖动多选。又或者在合适的时候调用 `activeSlideSelect()`，直接就让列表处于滑动选择模式，列表进入滑动选择模式时，需要主动调用 `inactiveSelect()` 退出该选择模式。
 
