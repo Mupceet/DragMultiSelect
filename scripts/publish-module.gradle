@@ -5,15 +5,16 @@ task androidSourcesJar(type: Jar) {
     archiveClassifier.set('sources')
     if (project.plugins.findPlugin("com.android.library")) {
         from android.sourceSets.main.java.srcDirs
+        from android.sourceSets.main.kotlin.srcDirs
     } else {
         from sourceSets.main.java.srcDirs
+        from sourceSets.main.kotlin.srcDirs
     }
 }
 
-//artifacts {
-//    archives androidSourcesJar
-//    archives javadocJar
-//}
+artifacts {
+    archives androidSourcesJar
+}
 
 group = PUBLISH_GROUP_ID
 version = PUBLISH_VERSION
@@ -31,8 +32,7 @@ afterEvaluate {
                     from components.java
                 }
 
-//                artifact androidSourcesJar
-//                artifact javadocJar
+                artifact androidSourcesJar
 
                 pom {
                     name = PUBLISH_ARTIFACT_ID
@@ -56,95 +56,17 @@ afterEvaluate {
                         developerConnection = POM_SCM_DEV_CONNECTION
                         url = POM_SCM_URL
                     }
-                    withXml {
-                        final dependenciesNode = asNode().appendNode('dependencies')
-
-                        ext.addDependency = { Dependency dep, String scope ->
-                            if (dep.group == null || dep.version == null || dep.name == null || dep.name == "unspecified")
-                                return // invalid dependencies should be ignored
-
-                            final dependencyNode = dependenciesNode.appendNode('dependency')
-                            dependencyNode.appendNode('artifactId', dep.name)
-
-                            if (dep.version == 'unspecified') {
-                                dependencyNode.appendNode('groupId', project.ext.pomGroupID)
-                                dependencyNode.appendNode('version', project.ext.pomVersion)
-                                System.println("${project.ext.pomGroupID} ${dep.name} ${project.ext.pomVersion}")
-                            } else {
-                                dependencyNode.appendNode('groupId', dep.group)
-                                dependencyNode.appendNode('version', dep.version)
-                                System.println("${dep.group} ${dep.name} ${dep.version}")
-                            }
-
-                            dependencyNode.appendNode('scope', scope)
-                            // Some dependencies may have types, such as aar, that should be mentioned in the POM file
-                            def artifactsList = dep.properties['artifacts']
-                            if (artifactsList != null && artifactsList.size() > 0) {
-                                final artifact = artifactsList[0]
-                                dependencyNode.appendNode('type', artifact.getType())
-                            }
-
-                            if (!dep.transitive) {
-                                // In case of non transitive dependency, all its dependencies should be force excluded from them POM file
-                                final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
-                                exclusionNode.appendNode('groupId', '*')
-                                exclusionNode.appendNode('artifactId', '*')
-                            } else if (!dep.properties.excludeRules.empty) {
-                                // For transitive with exclusions, all exclude rules should be added to the POM file
-                                final exclusions = dependencyNode.appendNode('exclusions')
-                                dep.properties.excludeRules.each { ExcludeRule rule ->
-                                    final exclusionNode = exclusions.appendNode('exclusion')
-                                    exclusionNode.appendNode('groupId', rule.group ?: '*')
-                                    exclusionNode.appendNode('artifactId', rule.module ?: '*')
-                                }
-                            }
-                        }
-
-                        configurations.api.getDependencies().each { dep -> addDependency(dep, "compile") }
-                        configurations.implementation.getDependencies().each { dep -> addDependency(dep, "runtime") }
-                    }
                 }
             }
         }
     }
 }
 
-ext["signing.keyId"] = rootProject.ext["signing.keyId"]
-ext["signing.password"] = rootProject.ext["signing.password"]
-ext["signing.secretKeyRingFile"] = rootProject.ext["signing.secretKeyRingFile"]
-
 signing {
+    useInMemoryPgpKeys(
+            rootProject.ext["signing.keyId"],
+            rootProject.ext["signing.key"],
+            rootProject.ext["signing.password"],
+    )
     sign publishing.publications
-}
-
-task assembleAndPublishLocally(dependsOn: ['assembleRelease']) {
-    finalizedBy('publishToMavenLocal')
-}
-task assembleAndPublish(dependsOn: ['assembleRelease']) {
-    finalizedBy('publish')
-}
-
-ext {
-    PUBLISH_GROUP_ID = 'com.mupceet.dragmultiselect'
-    PUBLISH_VERSION = '1.0.0'
-    VERSION_CODE = 1000000
-
-    PUBLISH_ARTIFACT_ID = 'dragmultiselect'
-    ARTIFACT_DESCRIPTION = 'Make the multi selection operation of RecyclerView more smooth and easy.'
-
-    POM_URL='https://github.com/Mupceet/DragMultiSelect'
-    POM_SCM_URL='https://github.com/Mupceet/DragMultiSelect/tree/master'
-    POM_SCM_CONNECTION='scm:git@github.com:Mupceet/DragMultiSelect.git'
-    POM_SCM_DEV_CONNECTION='scm:git:ssh://github.com/Mupceet/DragMultiSelect.git'
-
-    POM_DEVELOPER_ID='Mupceet'
-    POM_DEVELOPER_NAME='Mupceet'
-    POM_DEVELOPER_URL='https://github.com/Mupceet'
-    POM_DEVELOPER_EMAIL='mupceet@gmail.com'
-
-    LICENSE_NAME='The Apache Software License, Version 2.0'
-    LICENSE_URL='http://www.apache.org/licenses/LICENSE-2.0.txt'
-
-    uploadJavadocs = false
-    uploadSources = false
 }
