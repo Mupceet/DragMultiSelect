@@ -1,6 +1,6 @@
 # DragMultiSelect
 
-![Maven Central](https://img.shields.io/maven-central/v/com.mupceet.dragmultiselect/dragmultiselect)
+[![Maven Central](https://img.shields.io/maven-central/v/com.mupceet.dragmultiselect/dragmultiselect)](https://search.maven.org/artifact/com.mupceet.dragmultiselect/dragmultiselect)
 
 很多应用的列表都有多选的需求，通常流程为：
 
@@ -33,15 +33,13 @@
 
 | SelectAndKeep                                                               | SelectAndReverse                                                               | SelectAndUndo                                                               |
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| ![](https://github.com/Mupceet/article-piture/raw/master/SelectAndKeep.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/SelectAndReverse.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/SelectAndUndo.gif) |
+| ![SelectAndKeep](https://github.com/Mupceet/article-piture/raw/master/SelectAndKeep.gif) | ![SelectAndReverse](https://github.com/Mupceet/article-piture/raw/master/SelectAndReverse.gif) | ![SelectAndUndo](https://github.com/Mupceet/article-piture/raw/master/SelectAndUndo.gif) |
 | ToggleAndKeep                                                               | ToggleAndReverse                                                               | ToggleAndUndo                                                               |
-| ![](https://github.com/Mupceet/article-piture/raw/master/ToggleAndKeep.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/ToggleAndReverse.gif) | ![](https://github.com/Mupceet/article-piture/raw/master/ToggleAndUndo.gif) |
-
-如果开发者有明确的触发连续选择的时机例如**长按**或**触控特定控件**，可直接调用**拖动选择**的 API 让用户不抬手时完成连续选择；如果列表项有复选框可以提示用户在此区域内开始选择，则可以设置启用**滑动选择**的 API 得以在尽可能少地修改原项目代码的情况下支持用户连续选择。其中滑动选择功能指的是为列表指定一个特定区域，只要用户触摸在该区域内就可以开始进行连续选择。
+| ![ToggleAndKeep](https://github.com/Mupceet/article-piture/raw/master/ToggleAndKeep.gif) | ![ToggleAndReverse](https://github.com/Mupceet/article-piture/raw/master/ToggleAndReverse.gif) | ![ToggleAndUndo](https://github.com/Mupceet/article-piture/raw/master/ToggleAndUndo.gif) |
 
 ## 开始使用
 
-![Maven Central](https://img.shields.io/maven-central/v/com.mupceet.dragmultiselect/dragmultiselect)
+[![Maven Central](https://img.shields.io/maven-central/v/com.mupceet.dragmultiselect/dragmultiselect)](https://search.maven.org/artifact/com.mupceet.dragmultiselect/dragmultiselect)
 
 ```kotlin
 implementation("com.mupceet.dragmultiselect:dragmultiselect:(insert latest version)")
@@ -120,7 +118,7 @@ private DragMultiSelectHelper.Callback mDragSelectTouchHelperCallback =
 
 ### Step 2 of 4: 创建 DragMultiSelectHelper
 
-通常情况下，如果不启用**滑动选择**的功能，使用默认的配置即可。
+通常情况下，如果不启用**滑动选择**的功能，使用默认的配置即可。滑动选择功能指的是为列表指定一个特定区域，只要用户触摸在该区域内就可以开始进行连续选择。
 
 ```java
 mDragMultiSelectHelper = new DragMultiSelectHelper(mDragMultiSelectHelperCallback);
@@ -151,7 +149,7 @@ mDragMultiSelectHelper.attachToRecyclerView(mRecyclerView);
 
 ### Step 4 of 4: 启用选择模式
 
-需要启用选择时（通常是长按时）调用 `activeDragSelect(position)` 即可进行拖动多选。又或者在合适的时候调用 `activeSlideSelect()`，直接就让列表处于滑动选择模式，列表进入滑动选择模式时，需要主动调用 `inactiveSelect()` 退出该选择模式。
+如果开发者有明确的触发连续选择的时机例如**长按**或**触控特定控件**，可直接调用**拖动选择** `activeDragSelect(position)` 让用户不抬手时完成连续选择；如果列表项有复选框可以提示用户在此区域内开始选择，则可以设置启用**滑动选择**的 `activeSlideSelect()` 得以在尽可能少地修改原项目代码的情况下支持用户连续选择，列表进入滑动选择模式时，需要主动调用 `inactiveSelect()` 退出该选择模式。
 
 ```java
 mDragMultiSelectHelper.activeDragSelect(position);
